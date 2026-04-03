@@ -1,1051 +1,1259 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Story Steps 1–3</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>The Birthday Advantage</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 100%; height: 100%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-family: sans-serif; }
-#stage { width: 960px; height: 700px; position: relative; overflow: hidden; background: #fff; border-radius: 12px; box-shadow: 0 4px 32px rgba(0,0,0,0.1); }
-#fly-canvas    { position: absolute; top: 0; left: 0; z-index: 1; }
-#tree-wrap     { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; z-index: 2; }
-#morph-canvas  { position: absolute; top: 0; left: 0; z-index: 3; pointer-events: none; }
-#nav { position: absolute; bottom: 0; left: 0; right: 0; height: 52px; display: flex; justify-content: center; align-items: center; gap: 16px; z-index: 20; opacity: 0; transition: opacity 0.4s; pointer-events: none; background: rgba(255,255,255,0.95); border-top: 1px solid rgba(13,43,138,0.1); }
-#nav button { background: transparent; border: 1px solid rgba(13,43,138,0.3); color: #0d2b8a; padding: 7px 22px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.15s, color 0.15s; }
-#nav button:hover { background: #0d2b8a; color: #fff; border-color: #0d2b8a; }
-#btn-restart { border-color: rgba(13,43,138,0.15) !important; color: #555 !important; }
-#btn-restart:hover { background: #0d2b8a !important; color: #fff !important; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    font-family: 'Syne', sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
+  }
+
+  /* ── STAGE ── */
+  #stage {
+    width: 100vw; height: 100vh;
+    position: relative; overflow: hidden;
+    cursor: pointer;
+  }
+
+  /* ── CANVASES ── */
+  #space-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+  }
+
+  /* ── STEP 2 — TREE ── */
+  #step2-wrap {
+    position: absolute; inset: 0;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #tree-svg {
+    width: 100%; height: 100%;
+    overflow: visible;
+  }
+  #tree-svg path.link {
+    fill: none;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  #tree-svg circle.node-circle {
+    opacity: 0;
+  }
+  #tree-svg text.node-label {
+    opacity: 0;
+    font-family: 'Syne', sans-serif;
+  }
+
+  /* Step 2 text — centre overlay */
+  #text-step2 {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid rgba(13,43,138,0.12);
+    padding: 1.6rem 2.2rem;
+    max-width: min(400px, 88vw);
+    box-shadow: 0 8px 40px rgba(13,43,138,0.1);
+  }
+  #text-step2 .stat {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(1.5rem, 4.5vw, 2.2rem);
+    font-weight: 400;
+    color: #0d2b8a;
+    line-height: 1.25;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  #text-step2 .stat em { font-style: italic; }
+  #text-step2 .sub {
+    font-size: clamp(0.58rem, 1.8vw, 0.7rem);
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-top: 0.7rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── TEXT OVERLAY ── */
+  #text-overlay {
+    position: absolute; inset: 0;
+    z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+
+  .step-text {
+    position: absolute;
+    text-align: center;
+    padding: 0 2rem;
+    opacity: 0;
+    pointer-events: none;
+    width: 100%;
+  }
+
+  /* Step 1 text — bottom third of screen */
+  #text-step1 {
+    bottom: 18%;
+    left: 0; right: 0;
+  }
+  #text-step1 .big-stat {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(2.8rem, 8vw, 5rem);
+    font-weight: 400;
+    color: #fff;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  #text-step1 .big-stat em {
+    font-style: italic;
+    color: rgba(255,255,255,0.5);
+  }
+  #text-step1 .sub {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(0.65rem, 2vw, 0.85rem);
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-top: 1rem;
+  }
+
+  /* ── PROGRESS DOTS ── */
+  #progress {
+    position: absolute;
+    bottom: 2rem; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 0.5rem;
+    z-index: 20;
+  }
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.4s;
+  }
+  .dot.active { background: rgba(255,255,255,0.8); }
+
+  /* ── BACK BUTTON ── */
+  #btn-back {
+    position: absolute;
+    bottom: 1.6rem; left: 1.5rem;
+    z-index: 20;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    background: none; border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #btn-back:hover { color: rgba(255,255,255,0.7); }
+  #btn-back.visible { opacity: 1; pointer-events: auto; }
+  #btn-back.dark { color: rgba(0,0,0,0.35); }
+  #btn-back.dark:hover { color: rgba(0,0,0,0.7); }
+
+  /* ── TAP HINT ── */
+  #tap-hint {
+    position: absolute;
+    bottom: 1.6rem; right: 1.5rem;
+    z-index: 20;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    opacity: 0;
+    transition: color 0.4s;
+  }
+  #tap-hint.dark { color: rgba(0,0,0,0.3); }
+
+  /* ── STEP 3 — BAR CHART ── */
+  #step3-wrap {
+    position: absolute; inset: 0;
+    z-index: 6;
+    opacity: 0;
+    pointer-events: none;
+    background: #fff;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  #step3-question {
+    position: absolute;
+    top: clamp(1.2rem, 4vw, 2.5rem);
+    left: 0; right: 0;
+    text-align: center;
+    opacity: 0;
+    z-index: 8;
+  }
+  #step3-question .q-text {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 400;
+    color: #111;
+    font-style: italic;
+  }
+
+  /* Football field */
+  #football-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 7;
+    opacity: 0;
+  }
+
+  /* Bar chart SVG */
+  #bar-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
 </style>
 </head>
 <body>
 <div id="stage">
-  <canvas id="fly-canvas"></canvas>
-  <div id="tree-wrap"><svg id="tree-svg"></svg></div>
-  <canvas id="morph-canvas"></canvas>
-  <canvas id="portal-canvas" style="position:absolute;top:0;left:0;z-index:5;pointer-events:none;"></canvas>
-  <div id="nav">
-    <button id="btn-back">← Back</button>
-    <button id="btn-restart">↺ Restart</button>
-    <button id="btn-continue">Continue →</button>
+  <canvas id="space-canvas"></canvas>
+
+  <!-- Step 2 — Radial Tree -->
+  <div id="step2-wrap">
+    <svg id="tree-svg"></svg>
+    <div id="text-step2">
+      <div class="stat">We evaluated <em>138 teams</em><br/>and over <em>5,200 athletes</em></div>
+      <div class="sub">Across 6 leagues worldwide</div>
+    </div>
   </div>
+
+  <!-- Step 3 — Bar Chart -->
+  <div id="step3-wrap">
+    <svg id="bar-svg"></svg>
+    <canvas id="football-canvas"></canvas>
+    <div id="step3-question">
+      <div class="q-text">Birth Months Matter?</div>
+    </div>
+  </div>
+
+  <!-- Step 4 — League Comparison -->
+  <div id="step4-wrap" style="position:absolute;inset:0;z-index:7;opacity:0;pointer-events:none;overflow:hidden;"></div>
+
+  <!-- Step 5 — When to have a baby -->
+  <div id="step5-wrap" style="position:absolute;inset:0;z-index:8;opacity:0;pointer-events:none;overflow:hidden;"></div>
+
+  <div id="text-overlay">
+    <!-- Step 1 -->
+    <div class="step-text" id="text-step1">
+      <div class="big-stat"><em>1 in 30,000</em><br/>people are<br/>Pro Athletes</div>
+      <div class="sub">What separates them?</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div id="progress">
+    <div class="dot active" id="dot-0"></div>
+    <div class="dot" id="dot-1"></div>
+    <div class="dot" id="dot-2"></div>
+    <div class="dot" id="dot-3"></div>
+    <div class="dot" id="dot-4"></div>
+    <div class="dot" id="dot-5"></div>
+  </div>
+
+  <button id="btn-back">← Back</button>
+  <div id="tap-hint">Tap to continue</div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
-/* ── elements ── */
-const flyCanvas    = document.getElementById('fly-canvas');
-const flyCtx       = flyCanvas.getContext('2d');
-const morphCanvas  = document.getElementById('morph-canvas');
-const mCtx         = morphCanvas.getContext('2d');
-const portalCanvas = document.getElementById('portal-canvas');
-const pCtx         = portalCanvas.getContext('2d');
-const stage        = document.getElementById('stage');
-const treeWrap     = document.getElementById('tree-wrap');
-const treeSvg      = document.getElementById('tree-svg');
-const nav          = document.getElementById('nav');
-const btnBack      = document.getElementById('btn-back');
-const btnRestart   = document.getElementById('btn-restart');
-const btnContinue  = document.getElementById('btn-continue');
+/* ══════════════════════════════════════
+   SPACE FLYTHROUGH — Step 1
+══════════════════════════════════════ */
+const canvas = document.getElementById('space-canvas');
+const ctx    = canvas.getContext('2d');
+let W, H, dots, blueDot, flyT, flyAnim, arrived = false;
 
-/* ── constants ── */
 const TOTAL = 8000, SPEED = 5, FOV = 300, DEPTH = 2000;
 const TREE_DOT_R = 5.5;
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const COUNTS  = [597,499,538,490,468,415,420,400,401,444,373,360];
-const SZ = 5, STEP = 6;
-const MAR = { left:70, right:30, top:50, bottom:107 };
-const Q_COLORS = ['#7F58AF','#64C5EB','#E84D8A','#FEB326'];
-const Q_COUNTS = [1634,1373,1221,1177];
-const Q_MONTHS = [[0,1,2],[3,4,5],[6,7,8],[9,10,11]];
-const Q_LABELS = ['Q1\nJan · Feb · Mar','Q2\nApr · May · Jun','Q3\nJul · Aug · Sep','Q4\nOct · Nov · Dec'];
 
-/* ── state ── */
-let W, H, chartW, chartH, barW;
-let dots, treeDot, flyT, flyAnim;
-let treeRoot = null, treeBuilt = false, arrived = false;
-let morphT = 0, morphAnim = null;
-let liqT = 0, liqAnim = null, liqDrops = [];
-let portalT = 0, portalAnim = null;
-let finalT = 0, finalAnim = null;
-let particles = [], checkpoint = 'fly';
-
-/* ── step 6 data ── */
-const NFL_ODD  = [16,-8,12,2,-6,-12,-7,-2,2,20,-14,-4];
-const FIFA_ODD = [44,24,25,14,11,-5,-7,-18,-20,-17,-20,-31];
-
-/* ── step 5 data ── */
-const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const FIFA_M = [380,327,328,299,292,250,246,217,210,219,212,181];
-const NFL_M  = [217,172,210,191,176,165,174,183,191,225,161,179];
-const FIFA_Q = [[1035,'#1b5e20'],[841,'#388e3c'],[673,'#66bb6a'],[612,'#a5d6a7']];
-const NFL_Q  = [[599,'#bf360c'],[532,'#e64a19'],[548,'#ff7043'],[565,'#ffab91']];
-const Q_SHORT = ['Q1','Q2','Q3','Q4'];
-
-/* ── raw data ── */
-const raw = {"name":"Athletes","children":[{"name":"Football","children":[{"name":"NFL","children":[{"name":"Arizona Cardinals"},{"name":"Atlanta Falcons"},{"name":"Baltimore Ravens"},{"name":"Buffalo Bills"},{"name":"Carolina Panthers"},{"name":"Chicago Bears"},{"name":"Cincinnati Bengals"},{"name":"Cleveland Browns"},{"name":"Dallas Cowboys"},{"name":"Denver Broncos"},{"name":"Detroit Lions"},{"name":"Green Bay Packers"},{"name":"Houston Texans"},{"name":"Indianapolis Colts"},{"name":"Jacksonville Jaguars"},{"name":"Kansas City Chiefs"},{"name":"Las Vegas Raiders"},{"name":"Los Angeles Chargers"},{"name":"Los Angeles Rams"},{"name":"Miami Dolphins"},{"name":"Minnesota Vikings"},{"name":"New England Patriots"},{"name":"New Orleans Saints"},{"name":"New York Giants"},{"name":"New York Jets"},{"name":"Philadelphia Eagles"},{"name":"Pittsburgh Steelers"},{"name":"San Francisco 49ers"},{"name":"Seattle Seahawks"},{"name":"Tampa Bay Buccaneers"},{"name":"Tennessee Titans"},{"name":"Washington Commanders"}]}]},{"name":"Soccer","children":[{"name":"EPL","children":[{"name":"AFC Bournemouth"},{"name":"Arsenal"},{"name":"Aston Villa"},{"name":"Brentford"},{"name":"Brighton"},{"name":"Chelsea"},{"name":"Crystal Palace"},{"name":"Everton"},{"name":"Fulham"},{"name":"Liverpool"},{"name":"Manchester City"},{"name":"Manchester United"},{"name":"Newcastle United"},{"name":"Nottingham Forest"},{"name":"Tottenham Hotspur"},{"name":"West Ham United"},{"name":"Wolverhampton"}]},{"name":"La Liga","children":[{"name":"Athletic Club"},{"name":"Atletico Madrid"},{"name":"Barcelona"},{"name":"Celta Vigo"},{"name":"Espanyol"},{"name":"Getafe"},{"name":"Girona"},{"name":"Mallorca"},{"name":"Osasuna"},{"name":"Rayo Vallecano"},{"name":"Real Betis"},{"name":"Real Madrid"},{"name":"Real Sociedad"},{"name":"Sevilla"},{"name":"Valencia"},{"name":"Villarreal"}]},{"name":"Bundesliga","children":[{"name":"Bayer Leverkusen"},{"name":"Bayern Munich"},{"name":"Borussia Dortmund"},{"name":"Eintracht Frankfurt"},{"name":"FC Augsburg"},{"name":"Hamburg SV"},{"name":"Mainz"},{"name":"RB Leipzig"},{"name":"SC Freiburg"},{"name":"St. Pauli"},{"name":"TSG Hoffenheim"},{"name":"VfB Stuttgart"},{"name":"VfL Wolfsburg"},{"name":"Werder Bremen"}]},{"name":"Serie A","children":[{"name":"AC Milan"},{"name":"AS Roma"},{"name":"Atalanta"},{"name":"Bologna"},{"name":"Cagliari"},{"name":"Fiorentina"},{"name":"Internazionale"},{"name":"Juventus"},{"name":"Lazio"},{"name":"Napoli"},{"name":"Torino"},{"name":"Udinese"}]},{"name":"Ligue 1","children":[{"name":"AJ Auxerre"},{"name":"AS Monaco"},{"name":"Angers"},{"name":"Brest"},{"name":"Le Havre AC"},{"name":"Lens"},{"name":"Lille"},{"name":"Lorient"},{"name":"Lyon"},{"name":"Marseille"},{"name":"Nantes"},{"name":"Nice"},{"name":"Paris Saint-Germain"},{"name":"Stade Rennais"},{"name":"Strasbourg"},{"name":"Toulouse"}]}]}]};
-
-/* ── easing ── */
-function easeOut(t)   { return 1 - Math.pow(1-t, 3); }
-function easeInOut(t) { return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
-
-/* ── nav ── */
-function showNav(backEnabled) {
-  nav.style.opacity = '1'; nav.style.pointerEvents = 'auto';
-  btnBack.style.opacity = backEnabled ? '1' : '0.3';
-  btnBack.style.pointerEvents = backEnabled ? 'auto' : 'none';
-}
-function hideNav() { nav.style.opacity = '0'; nav.style.pointerEvents = 'none'; }
-
-/* ── resize ── */
 function resize() {
-  W = flyCanvas.width = morphCanvas.width = portalCanvas.width = stage.offsetWidth;
-  H = flyCanvas.height = morphCanvas.height = portalCanvas.height = stage.offsetHeight;
-  treeSvg.setAttribute('width', W); treeSvg.setAttribute('height', H);
-  chartW = W - MAR.left - MAR.right;
-  chartH = H - MAR.top - MAR.bottom;
-  barW   = chartW / 12;
-}
-/* ── bar geometry — single source of truth ── */
-function barRect(mi) {
-  const bw = barW * 0.78;
-  const bx = MAR.left + mi * barW + (barW - bw) / 2;
-  const bh = (COUNTS[mi] / Math.max(...COUNTS)) * chartH;
-  return { bx, by: H - MAR.bottom - bh, bw, bh };
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
 }
 
-/* ── project ── */
+function makeDot() {
+  const a = Math.random()*Math.PI*2;
+  const d = 30 + Math.random()*Math.max(W,H)*1.8;
+  return { ox: W/2+Math.cos(a)*d, oy: H/2+Math.sin(a)*d,
+           z: DEPTH*Math.random(), r: 1.4+Math.random()*1.8 };
+}
+
 function project(ox, oy, z) {
   if (z <= 1) return null;
-  const s = FOV / z;
+  const s = FOV/z;
   return { sx: W/2+(ox-W/2)*s, sy: H/2+(oy-H/2)*s, scale: s };
 }
-function makeDot() {
-  const a = Math.random()*Math.PI*2, d = 30+Math.random()*Math.max(W,H)*1.8;
-  return { ox:W/2+Math.cos(a)*d, oy:H/2+Math.sin(a)*d, z:DEPTH*Math.random(), r:1.4+Math.random()*1.8 };
-}
 
-/* ── compute tree (normalised radius=1) ── */
-function computeTree() {
-  treeRoot = d3.hierarchy(raw);
-  d3.cluster().size([2*Math.PI, 1])(treeRoot);
-}
-
-/* ── canvas tree drawing (scaled) ── */
-function drawTreeOnCanvas(cx, cy, radius) {
-  if (!treeRoot) return;
-  const lc = d => d.depth===1?'#0d2b8a':d.depth===2?'#1e4fc2':d.depth===3?'#1a4db5':'#aaa';
-  flyCtx.save(); flyCtx.translate(cx, cy);
-  treeRoot.links().forEach(lk => {
-    const sx=Math.cos(lk.source.x-Math.PI/2)*lk.source.y*radius, sy=Math.sin(lk.source.x-Math.PI/2)*lk.source.y*radius;
-    const tx=Math.cos(lk.target.x-Math.PI/2)*lk.target.y*radius, ty=Math.sin(lk.target.x-Math.PI/2)*lk.target.y*radius;
-    flyCtx.beginPath(); flyCtx.moveTo(sx,sy); flyCtx.lineTo(tx,ty);
-    flyCtx.strokeStyle=lk.target.depth===3?'rgba(26,77,181,0.35)':lk.target.depth===2?'rgba(30,79,194,0.4)':'rgba(13,43,138,0.5)';
-    flyCtx.lineWidth=Math.max(0.3,(lk.target.depth===3?.7:lk.target.depth===2?1:1.4)*radius/280);
-    flyCtx.stroke();
-  });
-  treeRoot.descendants().forEach(d => {
-    const nx=Math.cos(d.x-Math.PI/2)*d.y*radius, ny=Math.sin(d.x-Math.PI/2)*d.y*radius;
-    const nr=Math.max(0.5,(d.depth===0?6:d.depth===1?9:d.depth===2?6:4)*radius/280);
-    flyCtx.beginPath(); flyCtx.arc(nx,ny,nr,0,Math.PI*2);
-    flyCtx.fillStyle='#fff'; flyCtx.fill();
-    flyCtx.strokeStyle=lc(d); flyCtx.lineWidth=Math.max(0.2,(d.depth<=1?2:1.5)*radius/280); flyCtx.stroke();
-  });
-  flyCtx.restore();
-}
-
-/* ── build full SVG tree ── */
-function buildSVGTree() {
-  treeSvg.innerHTML='';
-  const cx=W/2, cy=H/2, R=Math.min(W,H)/2-140;
-  const root=d3.hierarchy(raw); d3.cluster().size([2*Math.PI,R])(root);
-  const g=d3.select(treeSvg).append('g').attr('transform',`translate(${cx},${cy})`);
-  const lc=d=>d.depth===1?'#0d2b8a':d.depth===2?'#1e4fc2':d.depth===3?'#1a4db5':'#aaa';
-  g.selectAll('path.link').data(root.links()).join('path').attr('fill','none')
-    .attr('stroke',d=>d.target.depth===3?'rgba(26,77,181,0.2)':d.target.depth===2?'rgba(30,79,194,0.2)':'rgba(13,43,138,0.2)')
-    .attr('stroke-width',d=>d.target.depth===3?.7:d.target.depth===2?1:1.4)
-    .attr('d',d3.linkRadial().angle(d=>d.x).radius(d=>d.y));
-  const node=g.selectAll('g.nd').data(root.descendants()).join('g')
-    .attr('transform',d=>`rotate(${d.x*180/Math.PI-90}) translate(${d.y},0)`);
-  node.append('circle').attr('r',d=>d.depth===0?6:d.depth===1?9:d.depth===2?6:4)
-    .attr('fill','#fff').attr('stroke',d=>lc(d)).attr('stroke-width',d=>d.depth<=1?2:1.5);
-  node.filter(d=>d.depth>0&&d.depth<3).append('text').attr('class','tlbl')
-    .attr('dy','.31em').attr('x',d=>d.x<Math.PI?14:-14).attr('text-anchor',d=>d.x<Math.PI?'start':'end')
-    .attr('transform',d=>d.x>=Math.PI?'rotate(180)':null)
-    .attr('font-size',d=>d.depth===1?13:10).attr('font-weight',d=>d.depth===1?'bold':'normal')
-    .attr('fill',d=>lc(d)).text(d=>d.data.name);
-  node.filter(d=>d.depth===3).append('text').attr('class','tlbl')
-    .attr('dy','.31em').attr('x',d=>d.x<Math.PI?10:-10).attr('text-anchor',d=>d.x<Math.PI?'start':'end')
-    .attr('transform',d=>d.x>=Math.PI?'rotate(180)':null).attr('font-size',9).attr('fill','#0d2b8a').text(d=>d.data.name);
-  treeBuilt=true;
-  return root;
-}
-
-/* ── draw axis labels helper ── */
-function drawAxisLabels(ctx) {
-  // X axis label — "Player Birth Months"
-  ctx.fillStyle='#333';
-  ctx.font='bold 12px sans-serif';
-  ctx.textAlign='center';
-  ctx.fillText('Player Birth Months', MAR.left + chartW/2, H - MAR.bottom + 38);
-
-  // Y axis label — "Number of Players" rotated
-  ctx.save();
-  ctx.translate(14, MAR.top + chartH/2);
-  ctx.rotate(-Math.PI/2);
-  ctx.textAlign='center';
-  ctx.fillText('Number of Players', 0, 0);
-  ctx.restore();
-}
-
-/* ── draw final bar chart on morph canvas ── */
-function drawFinalBars() {
-  mCtx.clearRect(0,0,W,H); mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-  // axes
-  mCtx.strokeStyle='rgba(0,0,0,.1)'; mCtx.lineWidth=1;
-  mCtx.beginPath(); mCtx.moveTo(MAR.left,MAR.top); mCtx.lineTo(MAR.left,H-MAR.bottom); mCtx.lineTo(W-MAR.right,H-MAR.bottom); mCtx.stroke();
-  const mx=Math.max(...COUNTS);
-  [0,100,200,300,400,500,600].forEach(v=>{
-    const y=H-MAR.bottom-(v/mx)*chartH;
-    mCtx.strokeStyle='rgba(0,0,0,.05)'; mCtx.beginPath(); mCtx.moveTo(MAR.left,y); mCtx.lineTo(W-MAR.right,y); mCtx.stroke();
-    mCtx.fillStyle='rgba(0,0,0,.3)'; mCtx.font='10px sans-serif'; mCtx.textAlign='right'; mCtx.fillText(v,MAR.left-6,y+4);
-  });
-  COUNTS.forEach((count,mi)=>{
-    const {bx,by,bw,bh}=barRect(mi);
-    mCtx.fillStyle='#1a4db5'; mCtx.beginPath(); mCtx.roundRect(bx,by,bw,bh,[3,3,0,0]); mCtx.fill();
-    mCtx.fillStyle='#1a4db5'; mCtx.font='bold 11px sans-serif'; mCtx.textAlign='center'; mCtx.fillText(count,bx+bw/2,by-6);
-    mCtx.fillStyle='#555'; mCtx.font='12px sans-serif'; mCtx.fillText(MONTHS[mi],bx+bw/2,H-MAR.bottom+18);
-  });
-  drawAxisLabels(mCtx);
-}
-
-/* ══════════════════════════════════════════
-   PHASE 1: FLYTHROUGH
-══════════════════════════════════════════ */
 function initFly() {
-  cancelAnimationFrame(flyAnim); cancelAnimationFrame(morphAnim);
-  flyT=0; arrived=false; treeBuilt=false; checkpoint='fly'; particles=[];
-  dots=[]; for(let i=0;i<TOTAL;i++) dots.push(makeDot());
-  treeDot={ox:W/2,oy:H/2,z:DEPTH*0.62};
-  treeWrap.style.opacity='0'; treeWrap.style.pointerEvents='none';
-  treeSvg.innerHTML='';
-  mCtx.clearRect(0,0,W,H);
-  hideNav(); computeTree();
-  flyAnim=requestAnimationFrame(drawFly);
+  flyT = 0; arrived = false;
+  dots = [];
+  for (let i=0;i<TOTAL;i++) dots.push(makeDot());
+  blueDot = { ox: W/2, oy: H/2, z: DEPTH*0.62, r: TREE_DOT_R };
 }
 
 function drawFly() {
   flyT++;
-  flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,W,H);
+
   if (arrived) return;
 
-  treeDot.z-=SPEED;
-  const bp=project(treeDot.ox,treeDot.oy,treeDot.z);
-  const br=bp?Math.min(bp.scale*TREE_DOT_R,W*2):0;
-  const fullR=Math.min(W,H)/2-140;
+  blueDot.z -= SPEED;
+  const bp = project(blueDot.ox, blueDot.oy, blueDot.z);
+  const br = bp ? Math.min(bp.scale*blueDot.r, W*2) : 0;
 
-  const dotFade=bp?Math.max(0,1-(br/(Math.min(W,H)*0.6))):1;
-  if(dotFade>0){
-    for(let i=0;i<dots.length;i++){
-      const d=dots[i]; d.z-=SPEED;
-      if(d.z<=0){const f=makeDot();f.z=DEPTH;dots[i]=f;continue;}
-      const p=project(d.ox,d.oy,d.z);
-      if(!p||p.sx<-50||p.sx>W+50||p.sy<-50||p.sy>H+50) continue;
-      const r=Math.min(p.scale*d.r,16); if(r<0.3) continue;
-      flyCtx.beginPath(); flyCtx.arc(p.sx,p.sy,r,0,Math.PI*2);
-      flyCtx.fillStyle=`rgba(255,120,10,${Math.min(0.82,p.scale*1.1)*dotFade})`; flyCtx.fill();
-    }
+  /* orange dots */
+  const dotFade = bp ? Math.max(0, 1-(br/(Math.min(W,H)*0.7))) : 1;
+  for (let i=0;i<dots.length;i++) {
+    const d = dots[i]; d.z -= SPEED;
+    if (d.z<=0){const f=makeDot();f.z=DEPTH;dots[i]=f;continue;}
+    const p = project(d.ox,d.oy,d.z);
+    if (!p||p.sx<-50||p.sx>W+50||p.sy<-50||p.sy>H+50) continue;
+    const r = Math.min(p.scale*d.r,16); if(r<0.3) continue;
+    ctx.beginPath(); ctx.arc(p.sx,p.sy,r,0,Math.PI*2);
+    ctx.fillStyle = `rgba(255,120,10,${Math.min(0.82,p.scale*1.1)*dotFade})`;
+    ctx.fill();
   }
-  if(bp&&br>0.5) drawTreeOnCanvas(bp.sx,bp.sy,br);
 
-  if(bp&&br>=fullR*0.92){
-    arrived=true; checkpoint='tree';
-    flyCtx.clearRect(0,0,W,H);
-    const svgRoot=buildSVGTree();
-    treeWrap.style.opacity='1'; treeWrap.style.pointerEvents='auto';
-    showNav(false);
+  /* blue dot */
+  if (bp) {
+    ctx.beginPath(); ctx.arc(bp.sx,bp.sy,Math.max(1,br),0,Math.PI*2);
+    ctx.fillStyle = '#0d2b8a'; ctx.fill();
+  }
+
+  /* hit */
+  const fullR = Math.min(W,H)/2 - 80;
+  if (bp && br >= fullR * 0.88) {
+    arrived = true;
+    /* text disappears with the bang */
+    gsap.to('#text-step1', { opacity: 0, duration: 0.2 });
+    gsap.to('#tap-hint',   { opacity: 0, duration: 0.2 });
+    /* flash white */
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0,0,W,H);
+    gsap.to('#space-canvas', { opacity: 0, duration: 0.5, delay: 0.1 });
+    setTimeout(() => advanceStep(), 600);
     return;
   }
-  flyAnim=requestAnimationFrame(drawFly);
+
+  flyAnim = requestAnimationFrame(drawFly);
 }
 
-/* ══════════════════════════════════════════
-   PHASE 2: TREE → BAR MORPH
-   Step A (0–0.25): labels fade out
-   Step B (0.2–0.5): circles morph to filled blue squares
-   Step C (0.45–1.0): squares fly to bar targets, lock in, bar solidifies
-══════════════════════════════════════════ */
-let svgNodes = []; // {x,y,depth} screen positions of SVG tree nodes
+/* ══════════════════════════════════════
+   STEP MANAGEMENT
+══════════════════════════════════════ */
+let currentStep = 0;
+const totalSteps = 6;
 
-function getSVGNodePositions() {
-  // Read from the built SVG — get actual screen positions of each node circle
-  const cx=W/2, cy=H/2, R=Math.min(W,H)/2-140;
-  const root=d3.hierarchy(raw); d3.cluster().size([2*Math.PI,R])(root);
-  return root.descendants().map(d=>{
-    const angle=d.x-Math.PI/2;
-    return { x: cx+Math.cos(angle)*d.y, y: cy+Math.sin(angle)*d.y, depth:d.depth,
-             r: d.depth===0?6:d.depth===1?9:d.depth===2?6:4 };
+/* Show text for step 1 after a short delay */
+function startStep1() {
+  currentStep = 0;
+  updateDots();
+
+  /* Animate text in after 1.5s */
+  gsap.to('#tap-hint', { opacity: 1, duration: 1, delay: 3 });
+  gsap.to('#text-step1', {
+    opacity: 1, y: 0,
+    duration: 1.2, delay: 1.8,
+    ease: 'power3.out'
+  });
+
+  /* Start fly */
+  resize(); initFly();
+  flyAnim = requestAnimationFrame(drawFly);
+}
+
+function advanceStep() {
+  currentStep++;
+  updateDots();
+  updateBack();
+
+  if (currentStep === 1) showStep2();
+  if (currentStep === 2) showStep3();
+  if (currentStep === 3) showStep4();
+  if (currentStep === 4) showStep5();
+  if (currentStep === 5) showStep6();
+}
+
+function goBack() {
+  if (currentStep === 0) return;
+  currentStep--;
+  updateDots();
+  updateBack();
+  if (currentStep === 0) {
+    gsap.to(['#step2-wrap','#step3-wrap','#step4-wrap'], { opacity: 0, duration: 0.4, onComplete: () => {
+      treeBuilt = false;
+      document.getElementById('tree-svg').innerHTML = '';
+      document.getElementById('btn-back').classList.remove('dark');
+      document.getElementById('tap-hint').classList.remove('dark');
+      gsap.set('#space-canvas', { opacity: 1 });
+      gsap.set('#text-step1', { opacity: 0, y: 20 });
+      arrived = false; resize(); initFly();
+      flyAnim = requestAnimationFrame(drawFly);
+      gsap.to('#text-step1', { opacity: 1, y: 0, duration: 0.8, delay: 0.3, ease: 'power3.out' });
+    }});
+  } else if (currentStep === 1) {
+    gsap.to(['#step3-wrap','#step4-wrap'], { opacity: 0, duration: 0.4, onComplete: () => {
+      document.getElementById('bar-svg').innerHTML = '';
+      gsap.set('#step3-question', { opacity: 0, y: -10 });
+      gsap.set('#step2-wrap', { opacity: 1 });
+      gsap.set('#text-step2', { opacity: 1, scale: 1 });
+    }});
+  } else if (currentStep === 2) {
+    gsap.to('#step4-wrap', { opacity: 0, duration: 0.4, onComplete: () => {
+      document.getElementById('step4-wrap').innerHTML = '';
+      gsap.set('#step3-wrap', { opacity: 1 });
+    }});
+  }
+}
+
+function updateDots() {
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.classList.toggle('active', i === currentStep);
   });
 }
 
-function buildParticles(nodePositions) {
-  particles=[];
-  const srcs=nodePositions.filter(n=>n.depth>0);
-  COUNTS.forEach((count,mi)=>{
-    const {bx,by,bw,bh}=barRect(mi);
-    const cols=Math.floor(bw/STEP), rows=Math.ceil(count/cols);
-    let placed=0;
-    for(let row=0;row<rows&&placed<count;row++){
-      for(let col=0;col<cols&&placed<count;col++){
-        const src=srcs[(mi*60+placed)%srcs.length];
-        particles.push({
-          sx:src.x, sy:src.y,
-          x:src.x, y:src.y,
-          tx: bx+col*STEP+SZ/2,
-          ty: H-MAR.bottom-row*STEP-SZ/2,
-          month:mi,
-          delay: 0.04+Math.random()*0.28,
-          arrived:false, lockT:-1
-        });
-        placed++;
-      }
+function updateBack() {
+  const btn = document.getElementById('btn-back');
+  if (currentStep > 0) btn.classList.add('visible');
+  else btn.classList.remove('visible');
+}
+
+/* ══════════════════════════════════════
+   STEP 2 — RADIAL TREE (GSAP + D3 + SVG)
+══════════════════════════════════════ */
+const RAW = {"name":"Athletes","children":[{"name":"Football","children":[{"name":"NFL","children":[{"name":"Arizona Cardinals"},{"name":"Atlanta Falcons"},{"name":"Baltimore Ravens"},{"name":"Buffalo Bills"},{"name":"Carolina Panthers"},{"name":"Chicago Bears"},{"name":"Cincinnati Bengals"},{"name":"Cleveland Browns"},{"name":"Dallas Cowboys"},{"name":"Denver Broncos"},{"name":"Detroit Lions"},{"name":"Green Bay Packers"},{"name":"Houston Texans"},{"name":"Indianapolis Colts"},{"name":"Jacksonville Jaguars"},{"name":"Kansas City Chiefs"},{"name":"Las Vegas Raiders"},{"name":"Los Angeles Chargers"},{"name":"Los Angeles Rams"},{"name":"Miami Dolphins"},{"name":"Minnesota Vikings"},{"name":"New England Patriots"},{"name":"New Orleans Saints"},{"name":"New York Giants"},{"name":"New York Jets"},{"name":"Philadelphia Eagles"},{"name":"Pittsburgh Steelers"},{"name":"San Francisco 49ers"},{"name":"Seattle Seahawks"},{"name":"Tampa Bay Buccaneers"},{"name":"Tennessee Titans"},{"name":"Washington Commanders"}]}]},{"name":"Soccer","children":[{"name":"EPL","children":[{"name":"AFC Bournemouth"},{"name":"Arsenal"},{"name":"Aston Villa"},{"name":"Brentford"},{"name":"Brighton"},{"name":"Chelsea"},{"name":"Crystal Palace"},{"name":"Everton"},{"name":"Fulham"},{"name":"Liverpool"},{"name":"Manchester City"},{"name":"Manchester United"},{"name":"Newcastle United"},{"name":"Nottingham Forest"},{"name":"Tottenham Hotspur"},{"name":"West Ham United"},{"name":"Wolverhampton"}]},{"name":"La Liga","children":[{"name":"Athletic Club"},{"name":"Atletico Madrid"},{"name":"Barcelona"},{"name":"Celta Vigo"},{"name":"Espanyol"},{"name":"Getafe"},{"name":"Girona"},{"name":"Mallorca"},{"name":"Osasuna"},{"name":"Rayo Vallecano"},{"name":"Real Betis"},{"name":"Real Madrid"},{"name":"Real Sociedad"},{"name":"Sevilla"},{"name":"Valencia"},{"name":"Villarreal"}]},{"name":"Bundesliga","children":[{"name":"Bayer Leverkusen"},{"name":"Bayern Munich"},{"name":"Borussia Dortmund"},{"name":"Eintracht Frankfurt"},{"name":"FC Augsburg"},{"name":"Hamburg SV"},{"name":"Mainz"},{"name":"RB Leipzig"},{"name":"SC Freiburg"},{"name":"St. Pauli"},{"name":"TSG Hoffenheim"},{"name":"VfB Stuttgart"},{"name":"VfL Wolfsburg"},{"name":"Werder Bremen"}]},{"name":"Serie A","children":[{"name":"AC Milan"},{"name":"AS Roma"},{"name":"Atalanta"},{"name":"Bologna"},{"name":"Cagliari"},{"name":"Fiorentina"},{"name":"Internazionale"},{"name":"Juventus"},{"name":"Lazio"},{"name":"Napoli"},{"name":"Torino"},{"name":"Udinese"}]},{"name":"Ligue 1","children":[{"name":"AJ Auxerre"},{"name":"AS Monaco"},{"name":"Angers"},{"name":"Brest"},{"name":"Le Havre AC"},{"name":"Lens"},{"name":"Lille"},{"name":"Lorient"},{"name":"Lyon"},{"name":"Marseille"},{"name":"Nantes"},{"name":"Nice"},{"name":"Paris Saint-Germain"},{"name":"Stade Rennais"},{"name":"Strasbourg"},{"name":"Toulouse"}]}]}]};
+
+let treeBuilt = false;
+
+function showStep2() {
+  /* Switch nav colours to dark */
+  document.getElementById('btn-back').classList.add('dark');
+  document.getElementById('tap-hint').classList.add('dark');
+  gsap.to('#tap-hint', { color: 'rgba(0,0,0,0.3)', duration: 0.3 });
+
+  /* Fade in white background wrap */
+  const wrap = document.getElementById('step2-wrap');
+  wrap.style.pointerEvents = 'none';
+  gsap.to(wrap, { opacity: 1, duration: 0.5, ease: 'power2.out', onComplete: () => {
+    buildTree();
+  }});
+}
+
+function buildTree() {
+  if (treeBuilt) return;
+  treeBuilt = true;
+
+  const svg   = document.getElementById('tree-svg');
+  const W2    = window.innerWidth;
+  const H2    = window.innerHeight;
+  const cx    = W2 / 2;
+  const cy    = H2 / 2;
+  const R     = Math.min(W2, H2) / 2 - (W2 < 500 ? 80 : 130);
+
+  svg.setAttribute('viewBox', `0 0 ${W2} ${H2}`);
+  svg.setAttribute('width', W2);
+  svg.setAttribute('height', H2);
+
+  const root  = d3.hierarchy(RAW);
+  d3.cluster().size([2 * Math.PI, R])(root);
+
+  const g = d3.select(svg).append('g')
+    .attr('transform', `translate(${cx},${cy})`);
+
+  const lc = d => d.depth===1?'#0d2b8a':d.depth===2?'#1e4fc2':d.depth===3?'#1a4db5':'#999';
+
+  /* Links */
+  const links = g.selectAll('path.link')
+    .data(root.links())
+    .join('path')
+    .attr('class','link')
+    .attr('fill','none')
+    .attr('stroke', d => d.target.depth===3?'rgba(26,77,181,0.18)':d.target.depth===2?'rgba(30,79,194,0.28)':'rgba(13,43,138,0.35)')
+    .attr('stroke-width', d => d.target.depth===3?0.7:d.target.depth===2?1:1.5)
+    .attr('d', d3.linkRadial().angle(d=>d.x).radius(d=>d.y));
+
+  /* Animate links with stroke-dashoffset trick */
+  links.each(function() {
+    const len = this.getTotalLength ? this.getTotalLength() : 200;
+    gsap.set(this, { strokeDasharray: len, strokeDashoffset: len });
+  });
+
+  /* Nodes */
+  const node = g.selectAll('g.nd')
+    .data(root.descendants())
+    .join('g')
+    .attr('class','nd')
+    .attr('transform', d=>`rotate(${d.x*180/Math.PI-90}) translate(${d.y},0)`);
+
+  const circles = node.append('circle')
+    .attr('class','node-circle')
+    .attr('r', d=>d.depth===0?6:d.depth===1?8:d.depth===2?5:3.5)
+    .attr('fill','#fff')
+    .attr('stroke', d=>lc(d))
+    .attr('stroke-width', d=>d.depth<=1?2:1.5);
+
+  /* Labels for non-leaf nodes */
+  const labels = node.filter(d=>d.depth>0&&d.depth<3)
+    .append('text')
+    .attr('class','node-label')
+    .attr('dy','.31em')
+    .attr('x', d=>d.x<Math.PI?14:-14)
+    .attr('text-anchor', d=>d.x<Math.PI?'start':'end')
+    .attr('transform', d=>d.x>=Math.PI?'rotate(180)':null)
+    .attr('font-size', d=>d.depth===1?13:9)
+    .attr('font-weight', d=>d.depth===1?'700':'400')
+    .attr('fill', d=>lc(d))
+    .text(d=>d.data.name);
+
+  /* Team labels */
+  const teamLabels = node.filter(d=>d.depth===3)
+    .append('text')
+    .attr('class','node-label')
+    .attr('dy','.31em')
+    .attr('x', d=>d.x<Math.PI?9:-9)
+    .attr('text-anchor', d=>d.x<Math.PI?'start':'end')
+    .attr('transform', d=>d.x>=Math.PI?'rotate(180)':null)
+    .attr('font-size', W2 < 500 ? 6.5 : 8)
+    .attr('fill','#1a4db5')
+    .text(d=>d.data.name);
+
+  /* ── GSAP TIMELINE ── */
+  const linkEls   = svg.querySelectorAll('path.link');
+  const circleEls = svg.querySelectorAll('circle.node-circle');
+  const labelEls  = svg.querySelectorAll('text.node-label');
+
+  /* Set initial dash state on links */
+  linkEls.forEach(el => {
+    const len = el.getTotalLength ? el.getTotalLength() : 200;
+    gsap.set(el, { strokeDasharray: len, strokeDashoffset: len });
+  });
+
+  gsap.set('#text-step2', { scale: 0.92 });
+
+  const tl = gsap.timeline();
+
+  /* Links draw in */
+  tl.to(linkEls, {
+    strokeDashoffset: 0,
+    duration: 0.8,
+    stagger: { amount: 1.2, from: 'start' },
+    ease: 'power2.inOut'
+  }, 0);
+
+  /* Nodes pop in */
+  tl.to(circleEls, {
+    opacity: 1, scale: 1,
+    duration: 0.3,
+    stagger: { amount: 0.8, from: 'start' },
+    ease: 'back.out(2)'
+  }, 0.6);
+
+  /* Labels fade in */
+  tl.to(labelEls, {
+    opacity: 1,
+    duration: 0.4,
+    stagger: { amount: 0.6 },
+    ease: 'power2.out'
+  }, 1.2);
+
+  /* Text card appears after tree fully settles */
+  tl.to('#text-step2', {
+    opacity: 1, scale: 1,
+    duration: 0.5,
+    ease: 'back.out(1.6)'
+  }, 2.2);
+}
+/* ══════════════════════════════════════
+   STEP 3 — BAR CHART + FOOTBALL
+══════════════════════════════════════ */
+const MONTHS     = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const COUNTS     = [597,499,538,490,468,415,420,400,401,444,373,360];
+const BAR_COLOR  = '#1a4db5';
+
+function showStep3() {
+  const wrap = document.getElementById('step3-wrap');
+  wrap.style.pointerEvents = 'none';
+
+  gsap.to('#step2-wrap', { opacity: 0, duration: 0.4, ease: 'power2.in', onComplete: () => {
+    gsap.to(wrap, { opacity: 1, duration: 0.5, ease: 'power2.out', onComplete: buildBarChart });
+  }});
+}
+
+function buildBarChart() {
+  const svg  = document.getElementById('bar-svg');
+  const W3   = window.innerWidth;
+  const H3   = window.innerHeight;
+  const isMobile = W3 < 600;
+
+  const MAR  = {
+    top:    isMobile ? 80  : 100,
+    bottom: isMobile ? 80  : 90,
+    left:   isMobile ? 30  : 60,
+    right:  isMobile ? 20  : 40
+  };
+
+  const chartW = W3 - MAR.left - MAR.right;
+  const chartH = H3 - MAR.top  - MAR.bottom;
+  const barW   = chartW / 12;
+  const maxV   = Math.max(...COUNTS);
+  const minY   = 200; // y-axis min
+
+  svg.setAttribute('viewBox', `0 0 ${W3} ${H3}`);
+  svg.setAttribute('width',  W3);
+  svg.setAttribute('height', H3);
+  svg.innerHTML = '';
+
+  const g = d3.select(svg).append('g');
+
+  /* Y gridlines */
+  [200,300,400,500,600].forEach(v => {
+    const y = MAR.top + chartH * (1 - (v - minY)/(maxV - minY));
+    g.append('line')
+      .attr('x1', MAR.left).attr('x2', W3 - MAR.right)
+      .attr('y1', y).attr('y2', y)
+      .attr('stroke', 'rgba(0,0,0,0.06)').attr('stroke-width', 1);
+    g.append('text')
+      .attr('x', MAR.left - 6).attr('y', y + 4)
+      .attr('text-anchor', 'end')
+      .attr('font-family', 'Syne, sans-serif')
+      .attr('font-size', isMobile ? 9 : 10)
+      .attr('fill', '#bbb')
+      .text(v);
+  });
+
+  /* Bars */
+  const barPad = barW * 0.18;
+  COUNTS.forEach((count, i) => {
+    const bx  = MAR.left + i * barW + barPad;
+    const bw  = barW - barPad * 2;
+    const bh  = chartH * ((count - minY) / (maxV - minY));
+    const by  = MAR.top + chartH - bh;
+
+    /* Bar rect — starts at height 0 */
+    g.append('rect')
+      .attr('class', 'bar-rect')
+      .attr('x', bx).attr('y', MAR.top + chartH)
+      .attr('width', bw).attr('height', 0)
+      .attr('rx', 3).attr('ry', 3)
+      .attr('fill', BAR_COLOR)
+      .attr('data-by', by)
+      .attr('data-bh', bh);
+
+    /* Month label */
+    g.append('text')
+      .attr('class', 'bar-label')
+      .attr('x', bx + bw/2)
+      .attr('y', MAR.top + chartH + (isMobile ? 16 : 20))
+      .attr('text-anchor', 'middle')
+      .attr('font-family', 'Syne, sans-serif')
+      .attr('font-size', isMobile ? 9 : 11)
+      .attr('font-weight', '600')
+      .attr('fill', '#888')
+      .attr('opacity', 0)
+      .text(MONTHS[i]);
+
+    /* Count label on top */
+    g.append('text')
+      .attr('class', 'bar-count')
+      .attr('x', bx + bw/2)
+      .attr('y', by - 6)
+      .attr('text-anchor', 'middle')
+      .attr('font-family', 'Syne, sans-serif')
+      .attr('font-size', isMobile ? 8 : 10)
+      .attr('font-weight', '700')
+      .attr('fill', BAR_COLOR)
+      .attr('opacity', 0)
+      .text(count);
+  });
+
+  /* Animate bars up with stagger */
+  const bars   = svg.querySelectorAll('.bar-rect');
+  const labels = svg.querySelectorAll('.bar-label');
+  const counts = svg.querySelectorAll('.bar-count');
+
+  const tl = gsap.timeline();
+
+  tl.to(bars, {
+    attr: (i, el) => ({ y: el.getAttribute('data-by'), height: el.getAttribute('data-bh') }),
+    duration: 0.6, stagger: 0.06, ease: 'power3.out'
+  }, 0);
+
+  tl.to(labels, { opacity: 1, duration: 0.3, stagger: 0.06, ease: 'power2.out' }, 0.4);
+  tl.to(counts, { opacity: 1, duration: 0.3, stagger: 0.06, ease: 'power2.out' }, 0.5);
+
+  tl.to('#step3-question', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0.3);
+  gsap.set('#step3-question', { y: -10 });
+
+  /* Store geometry for the transition */
+  window._barGeo = { W3, H3, MAR, chartW, barW, minY, maxV: Math.max(...COUNTS), chartH };
+}
+
+/* ══════════════════════════════════════
+   STEP 3 → 4 TRANSITION
+   Early months (Jan Feb Mar Apr May Oct) detach forward
+   Late months  (Jun Jul Aug Sep Nov Dec) stay / fade back
+   Then league comparison slides in
+══════════════════════════════════════ */
+const FORWARD_IDX = [0,1,2,3,4,9];   // Jan Feb Mar Apr May Oct
+const BACK_IDX    = [5,6,7,8,10,11]; // Jun Jul Aug Sep Nov Dec
+
+/* ══════════════════════════════════════
+   STEP 3 → 4 TRANSITION
+   Forward bars (Jan Feb Mar Apr May Oct)
+   zoom toward viewer, fill screen like
+   the blue dot, then league comparison
+   bursts through from centre
+══════════════════════════════════════ */
+function startBarDetach() {
+  const geo  = window._barGeo;
+  const svg  = document.getElementById('bar-svg');
+  const bars   = Array.from(svg.querySelectorAll('.bar-rect'));
+  const labels = Array.from(svg.querySelectorAll('.bar-label'));
+  const counts = Array.from(svg.querySelectorAll('.bar-count'));
+
+  /* Phase 1: dim the back bars, question fades */
+  gsap.to('#step3-question', { opacity: 0, duration: 0.3 });
+
+  BACK_IDX.forEach(i => {
+    gsap.to(bars[i],   { opacity: 0.15, fill: '#c8d4f0', duration: 0.5 });
+    gsap.to(labels[i], { opacity: 0.1,  duration: 0.4 });
+    gsap.to(counts[i], { opacity: 0.1,  duration: 0.4 });
+  });
+
+  /* Phase 2: forward bars turn navy and accelerate toward us */
+  FORWARD_IDX.forEach((mi, pos) => {
+    gsap.to(bars[mi], { fill: '#0d2b8a', duration: 0.3, delay: 0.2 });
+    gsap.to(labels[mi], { fill: '#0d2b8a', duration: 0.3, delay: 0.2 });
+  });
+
+  /* Phase 3: use a canvas overlay to do the zoom-rush effect */
+  setTimeout(() => {
+    runZoomRush(geo, bars, labels, counts);
+  }, 600);
+}
+
+function runZoomRush(geo, bars, labels, labels2) {
+  const W = window.innerWidth, H = window.innerHeight;
+
+  /* Create overlay canvas */
+  const oc = document.createElement('canvas');
+  oc.width = W; oc.height = H;
+  oc.style.cssText = 'position:absolute;inset:0;z-index:9;pointer-events:none;';
+  document.getElementById('stage').appendChild(oc);
+  const oct = oc.getContext('2d');
+
+  /* Snapshot just the forward bars onto an offscreen canvas */
+  const snap = document.createElement('canvas');
+  snap.width = W; snap.height = H;
+  const sCtx = snap.getContext('2d');
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  FORWARD_IDX.forEach(i => {
+    const b  = bars[i];
+    const bx = parseFloat(b.getAttribute('x'));
+    const by = parseFloat(b.getAttribute('y'));
+    const bw = parseFloat(b.getAttribute('width'));
+    const bh = parseFloat(b.getAttribute('height'));
+    minX = Math.min(minX, bx);  maxX = Math.max(maxX, bx + bw);
+    minY = Math.min(minY, by);  maxY = Math.max(maxY, by + bh);
+    sCtx.fillStyle = '#0d2b8a';
+    sCtx.beginPath(); sCtx.roundRect(bx, by, bw, bh, 3); sCtx.fill();
+  });
+
+  const groupCx = (minX + maxX) / 2;
+  const groupCy = (minY + maxY) / 2;
+
+  /* Hide SVG immediately */
+  gsap.to('#step3-wrap', { opacity: 0, duration: 0.2 });
+
+  /* GSAP drives the scale — fast, punchy, like a cannon */
+  const state = { scale: 1, whiteR: 0 };
+
+  gsap.to(state, {
+    scale: 28,
+    duration: 0.55,
+    ease: 'power4.in',     // accelerates hard — cannon feel
+    onUpdate() {
+      oct.clearRect(0, 0, W, H);
+      oct.fillStyle = '#fff';
+      oct.fillRect(0, 0, W, H);
+
+      /* Bars blasting toward us */
+      oct.save();
+      oct.translate(groupCx, groupCy);
+      oct.scale(state.scale, state.scale);
+      oct.translate(-groupCx, -groupCy);
+      oct.drawImage(snap, 0, 0);
+      oct.restore();
+    },
+    onComplete() {
+      /* White wipe from centre */
+      gsap.to(state, {
+        whiteR: Math.sqrt(W * W + H * H),
+        duration: 0.25,
+        ease: 'power2.out',
+        onUpdate() {
+          oct.clearRect(0, 0, W, H);
+          oct.fillStyle = '#fff'; oct.fillRect(0, 0, W, H);
+          oct.save();
+          oct.translate(groupCx, groupCy);
+          oct.scale(state.scale, state.scale);
+          oct.translate(-groupCx, -groupCy);
+          oct.drawImage(snap, 0, 0);
+          oct.restore();
+          oct.beginPath();
+          oct.arc(groupCx, groupCy, state.whiteR, 0, Math.PI * 2);
+          oct.fillStyle = '#fff'; oct.fill();
+        },
+        onComplete() {
+          oc.remove();
+          showLeagueComparison();
+        }
+      });
     }
   });
 }
 
-function startMorph() {
-  morphT=0; checkpoint='bars'; hideNav();
+/* ══════════════════════════════════════
+   STEP 4 — LEAGUE COMPARISON
+══════════════════════════════════════ */
+const FIFA_M = [380,327,328,299,292,250,246,217,210,219,212,181];
+const NFL_M  = [217,172,210,191,176,165,174,183,191,225,161,179];
+const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  // 1. Fade labels out via CSS transition on SVG
-  d3.select(treeSvg).selectAll('.tlbl')
-    .transition().duration(600).ease(d3.easeCubicOut).style('opacity',0);
+/* FIFA: Jun(5) Jul(6) Aug(7) Sep(8) Oct(9) Nov(10) Dec(11) */
+const FIFA_DROP_A = [5,6,7,8,9,10,11];
+/* FIFA: additionally May(4) — drops after the main wave */
+const FIFA_DROP_B = [4];
+/* NFL: Feb(1) May(4) Jun(5) Jul(6) Aug(7) Sep(8) Nov(10) Dec(11) */
+const NFL_DROP_A  = [1,4,5,6,7,8,10,11];
 
-  // 2. Get node positions, build particles
-  const nodePositions=getSVGNodePositions();
-  buildParticles(nodePositions);
+let fifaBarEls = [];
+let nflBarEls  = [];
 
-  // 3. Start morph after labels fade (400ms head start, then morph runs)
-  setTimeout(()=>{
-    treeWrap.style.pointerEvents='none';
-    morphAnim=requestAnimationFrame(drawMorph);
-  }, 400);
-}
-
-function drawMorph() {
-  morphT++;
-  mCtx.clearRect(0,0,W,H);
-  mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-
-  const DUR=220, prog=Math.min(1,morphT/DUR);
-
-  // Phase A: fade tree SVG out as morph starts
-  if(prog<0.35){
-    const svgAlpha=Math.max(0,1-prog/0.3);
-    treeWrap.style.opacity=svgAlpha;
-  } else {
-    treeWrap.style.opacity='0';
-  }
-
-  // Track arrivals per bar
-  const arrivedPerBar=COUNTS.map(()=>0);
-
-  particles.forEach(p=>{
-    const pd=Math.max(0,prog-p.delay);
-    const lp=Math.min(1,pd/(1-p.delay+0.001));
-    const ep=easeInOut(lp);
-    p.x=p.sx+(p.tx-p.sx)*ep;
-    p.y=p.sy+(p.ty-p.sy)*ep;
-    if(lp>=1&&!p.arrived){p.arrived=true; p.lockT=morphT;}
-    if(p.arrived) arrivedPerBar[p.month]++;
-  });
-
-  // Draw solid bars growing as particles arrive
-  const mx=Math.max(...COUNTS);
-  COUNTS.forEach((count,mi)=>{
-    const {bx,by,bw,bh}=barRect(mi);
-    const total=particles.filter(p=>p.month===mi).length;
-    const frac=total>0?arrivedPerBar[mi]/total:0;
-    if(frac>0){
-      const solidH=bh*frac;
-      mCtx.fillStyle='#1a4db5';
-      mCtx.beginPath(); mCtx.roundRect(bx,H-MAR.bottom-solidH,bw,solidH,[3,3,0,0]); mCtx.fill();
+function showLeagueComparison() {
+  const wrap = document.getElementById('step4-wrap');
+  buildLeagueChart();
+  gsap.fromTo(wrap, { x: '100%', opacity: 0 }, {
+    x: '0%', opacity: 1, duration: 0.65, ease: 'power3.out',
+    onComplete: () => {
+      /* After bars finish drawing, auto-trigger the FIFA animation on next tap */
+      wrap.style.pointerEvents = 'auto';
     }
   });
-
-  // Draw particles in flight as blue squares
-  particles.forEach(p=>{
-    if(!p.arrived){
-      mCtx.fillStyle='rgba(26,77,181,0.85)';
-      mCtx.fillRect(p.x-SZ/2,p.y-SZ/2,SZ,SZ);
-    } else if(p.lockT>0&&morphT-p.lockT<12){
-      // lock-in flash
-      const a=1-(morphT-p.lockT)/12;
-      mCtx.fillStyle=`rgba(255,255,255,${a*0.65})`;
-      mCtx.fillRect(p.x-SZ/2-1,p.y-SZ/2-1,SZ+2,SZ+2);
-    }
-  });
-
-  // Axes fade in after halfway
-  if(prog>0.45){
-    const axAlpha=easeOut(Math.min(1,(prog-0.45)/0.4));
-    mCtx.globalAlpha=axAlpha;
-    mCtx.strokeStyle='rgba(0,0,0,.1)'; mCtx.lineWidth=1;
-    mCtx.beginPath(); mCtx.moveTo(MAR.left,MAR.top); mCtx.lineTo(MAR.left,H-MAR.bottom); mCtx.lineTo(W-MAR.right,H-MAR.bottom); mCtx.stroke();
-    [0,100,200,300,400,500,600].forEach(v=>{
-      const y=H-MAR.bottom-(v/mx)*chartH;
-      mCtx.strokeStyle='rgba(0,0,0,.05)'; mCtx.beginPath(); mCtx.moveTo(MAR.left,y); mCtx.lineTo(W-MAR.right,y); mCtx.stroke();
-      mCtx.fillStyle='rgba(0,0,0,.3)'; mCtx.font='10px sans-serif'; mCtx.textAlign='right'; mCtx.fillText(v,MAR.left-6,y+4);
-    });
-    mCtx.globalAlpha=1;
-  }
-
-  // Labels fade in near end
-  if(prog>0.78){
-    const la=easeOut(Math.min(1,(prog-0.78)/0.22));
-    mCtx.globalAlpha=la;
-    COUNTS.forEach((count,mi)=>{
-      const {bx,by,bw}=barRect(mi);
-      mCtx.fillStyle='#1a4db5'; mCtx.font='bold 11px sans-serif'; mCtx.textAlign='center'; mCtx.fillText(count,bx+bw/2,by-6);
-      mCtx.fillStyle='#555'; mCtx.font='12px sans-serif'; mCtx.fillText(MONTHS[mi],bx+bw/2,H-MAR.bottom+18);
-    });
-    drawAxisLabels(mCtx);
-    mCtx.globalAlpha=1;
-  }
-
-  if(prog<1){
-    morphAnim=requestAnimationFrame(drawMorph);
-  } else {
-    drawFinalBars();
-    showNav(true);
-  }
-}
-/* ── resize ── */
-function resize() {
-  W = flyCanvas.width = morphCanvas.width = portalCanvas.width = stage.offsetWidth;
-  H = flyCanvas.height = morphCanvas.height = portalCanvas.height = stage.offsetHeight;
-  treeSvg.setAttribute('width', W); treeSvg.setAttribute('height', H);
-  chartW = W - MAR.left - MAR.right;
-  chartH = H - MAR.top - MAR.bottom;
-  barW   = chartW / 12;
 }
 
-/* ══════════════════════════════════════════
-   PHASE 3: BAR → ROSE LIQUID TRANSITION
-   Each quarter's 3 bars collapse into one
-   coloured liquid blob, then flow into the
-   correct rose slice position
-══════════════════════════════════════════ */
+function buildLeagueChart() {
+  fifaBarEls = [];
+  nflBarEls  = [];
+  const wrap = document.getElementById('step4-wrap');
+  const W4   = window.innerWidth;
+  const H4   = window.innerHeight;
+  const isMobile = W4 < 600;
+  const NAV  = 60;
+  const sH   = (H4 - NAV) / 2;
 
-/* Get the mid-point of a pie slice for quarter qi */
-function getSliceTarget(qi) {
-  const cx = W/2, cy = (H - 52)/2;
-  const half = Math.min(W, H-52)/2;
-  const Rin  = half * 0.15;
-  const Rout = half * 0.75;
-  const tot  = Q_COUNTS.reduce((a,b)=>a+b,0);
-  let ang = -Math.PI/2;
-  for (let i=0;i<qi;i++) ang += 2*Math.PI*(Q_COUNTS[i]/tot);
-  const sweep = 2*Math.PI*(Q_COUNTS[qi]/tot);
-  const mid = ang + sweep/2;
-  const r = Rin + (Rout-Rin)*0.6;
-  return { x: cx+Math.cos(mid)*r, y: cy+Math.sin(mid)*r, ang, sweep, Rin, Rout, cx, cy };
-}
+  wrap.innerHTML = '';
+  wrap.style.background = '#fff';
 
-function hexToRgb(hex) {
-  const h=hex.replace('#','');
-  return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];
-}
-function lerpColor(c1,c2,t) {
-  return [Math.round(c1[0]+(c2[0]-c1[0])*t),Math.round(c1[1]+(c2[1]-c1[1])*t),Math.round(c1[2]+(c2[2]-c1[2])*t)];
-}
+  /* Divider */
+  const divEl = document.createElement('div');
+  divEl.style.cssText = `position:absolute;left:24px;right:24px;top:${sH}px;height:1px;background:rgba(0,0,0,0.07);z-index:1;`;
+  wrap.appendChild(divEl);
 
-/* ── Pure canvas rose geometry ── */
-function getRoseGeometry() {
-  const cx = W/2, cy = (H-52)/2;
-  const half = Math.min(W, H-52)/2;
-  const Rin = half*0.15, Rout = half*0.75;
-  const tot = Q_COUNTS.reduce((a,b)=>a+b,0);
-  const maxQ = Math.max(...Q_COUNTS);
-  const slices = [];
-  let ang = -Math.PI/2;
-  Q_COUNTS.forEach((count,qi)=>{
-    const sweep = 2*Math.PI*(count/tot);
-    const sliceR = Rin + (Rout-Rin)*(count/maxQ);
-    slices.push({ ang, sweep, sliceR, Rin, cx, cy, qi, count });
-    ang += sweep;
-  });
-  return { slices, Rin, Rout, cx, cy };
-}
+  function makeSection(months, color, title, dotColor, yOff, isFifa) {
+    const div = document.createElement('div');
+    div.style.cssText = `position:absolute;left:0;right:0;top:${yOff}px;height:${sH}px;overflow:hidden;`;
 
-function drawCanvasRose(alpha=1) {
-  const { slices, Rin } = getRoseGeometry();
-  mCtx.globalAlpha = alpha;
-  /* slices */
-  slices.forEach(s=>{
-    mCtx.beginPath();
-    mCtx.moveTo(s.cx, s.cy);
-    mCtx.arc(s.cx, s.cy, s.sliceR, s.ang, s.ang+s.sweep);
-    mCtx.closePath();
-    mCtx.fillStyle = Q_COLORS[s.qi];
-    mCtx.fill();
-  });
-  /* white inner hole */
-  mCtx.beginPath();
-  mCtx.arc(slices[0].cx, slices[0].cy, Rin, 0, Math.PI*2);
-  mCtx.fillStyle = '#fff'; mCtx.fill();
-  /* white borders between slices */
-  slices.forEach(s=>{
-    mCtx.beginPath();
-    mCtx.moveTo(s.cx, s.cy);
-    mCtx.arc(s.cx, s.cy, s.sliceR, s.ang, s.ang+s.sweep);
-    mCtx.closePath();
-    mCtx.strokeStyle = '#fff'; mCtx.lineWidth = 2; mCtx.stroke();
-  });
-  /* labels */
-  const Q_LABEL_LINES = [['Q1','Jan · Feb · Mar'],['Q2','Apr · May · Jun'],['Q3','Jul · Aug · Sep'],['Q4','Oct · Nov · Dec']];
-  const Q_VALS = [1634,1373,1221,1177];
-  const tot = Q_COUNTS.reduce((a,b)=>a+b,0);
-  slices.forEach(s=>{
-    const mid = s.ang + s.sweep/2;
-    const labelR = s.sliceR + 40;
-    let lx = s.cx + Math.cos(mid)*labelR;
-    let ly = s.cy + Math.sin(mid)*labelR;
-    /* Q1 nudge — push up and right for readability */
-    if(s.qi === 0){ lx += 28; ly -= 22; }
-    /* line from slice edge */
-    const edgeX = s.cx + Math.cos(mid)*s.sliceR;
-    const edgeY = s.cy + Math.sin(mid)*s.sliceR;
-    mCtx.beginPath(); mCtx.moveTo(edgeX,edgeY); mCtx.lineTo(lx,ly);
-    mCtx.strokeStyle='rgba(0,0,0,0.25)'; mCtx.lineWidth=1.2; mCtx.stroke();
-    mCtx.fillStyle = '#2d1b69';
-    mCtx.font = 'bold 13px sans-serif'; mCtx.textAlign='center';
-    mCtx.fillText(Q_LABEL_LINES[s.qi][0], lx, ly - 10);
-    mCtx.fillStyle = '#666';
-    mCtx.font = '11px sans-serif';
-    mCtx.fillText(Q_LABEL_LINES[s.qi][1], lx, ly + 5);
-    mCtx.fillText(`${s.count} players · ${Math.round(s.count/tot*100)}%`, lx, ly + 19);
-  });
-  mCtx.globalAlpha = 1;
-}
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', W4); svg.setAttribute('height', sH);
 
-function startLiquidTransition() {
-  liqT=0; checkpoint='rose'; hideNav();
-  liqDrops=[];
+    const lPad = isMobile ? 90 : 120;
+    const rPad = isMobile ? 36 : 50;
+    const tPad = isMobile ? 36 : 44;
+    const bPad = isMobile ? 18 : 24;
+    const chartW = W4 - lPad - rPad;
+    const chartH = sH - tPad - bPad;
+    const maxV   = Math.max(...months);
+    const rowH   = chartH / 12;
 
-  const blueRgb=[26,77,181];
-  const geo = getRoseGeometry();
+    /* Header */
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', isMobile?14:18); dot.setAttribute('cy', isMobile?16:20);
+    dot.setAttribute('r', isMobile?5:6); dot.setAttribute('fill', dotColor);
+    svg.appendChild(dot);
+    const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    titleEl.setAttribute('x', isMobile?24:30); titleEl.setAttribute('y', isMobile?21:25);
+    titleEl.setAttribute('font-family','Syne,sans-serif'); titleEl.setAttribute('font-size', isMobile?11:13);
+    titleEl.setAttribute('font-weight','600'); titleEl.setAttribute('fill','#1a1a1a');
+    titleEl.textContent = title; svg.appendChild(titleEl);
 
-  Q_MONTHS.forEach((months, qi)=>{
-    const s = geo.slices[qi];
-    const mid = s.ang + s.sweep/2;
-    /* target = random point inside the slice */
-    const qRgb = hexToRgb(Q_COLORS[qi]);
-    months.forEach(mi=>{
-      const {bx,by,bw,bh}=barRect(mi);
-      for(let i=0;i<80;i++){
-        /* gather point: centre of the 3 quarter bars */
-        const gatherX = MAR.left + (Q_MONTHS[qi][1]+0.5)*barW;
-        const gatherY = H - MAR.bottom - 55;
-        /* target: random point within the rose slice */
-        const tr = s.Rin + Math.random()*(s.sliceR - s.Rin);
-        const ta = s.ang + Math.random()*s.sweep;
-        liqDrops.push({
-          sx: bx + Math.random()*bw,
-          sy: by + Math.random()*bh,
-          gx: gatherX + (Math.random()-0.5)*20,
-          gy: gatherY + (Math.random()-0.5)*16,
-          tx: s.cx + Math.cos(ta)*tr,
-          ty: s.cy + Math.sin(ta)*tr,
-          x:0, y:0,
-          r: 2+Math.random()*2.5,
-          qi,
-          fromRgb: blueRgb,
-          toRgb: qRgb,
-          delay: Math.random()*0.2
-        });
-      }
-    });
-  });
-
-  liqAnim=requestAnimationFrame(drawLiquid);
-}
-
-function drawLiquid() {
-  liqT++;
-  mCtx.clearRect(0,0,W,H);
-  mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-
-  const DUR=300, prog=Math.min(1,liqT/DUR);
-
-  /* Bars fade out over first 28% */
-  const barAlpha = Math.max(0, 1 - prog/0.28);
-  if(barAlpha>0){
-    mCtx.globalAlpha=barAlpha;
-    drawBarsOnly(mCtx);
-    mCtx.globalAlpha=1;
-  }
-
-  /* Drops travel and shift colour */
-  liqDrops.forEach(d=>{
-    const pd = Math.max(0, prog-d.delay);
-    const lp = Math.min(1, pd/(1-d.delay+0.001));
-    let x, y, colorT;
-    if(lp<0.45){
-      const t1=easeInOut(lp/0.45);
-      x=d.sx+(d.gx-d.sx)*t1; y=d.sy+(d.gy-d.sy)*t1;
-      colorT=t1*0.3;
-    } else {
-      const t2=easeInOut((lp-0.45)/0.55);
-      x=d.gx+(d.tx-d.gx)*t2; y=d.gy+(d.ty-d.gy)*t2;
-      colorT=0.3+t2*0.7;
-    }
-    d.x=x; d.y=y;
-    const c=lerpColor(d.fromRgb,d.toRgb,Math.min(1,colorT*1.5));
-    const dropAlpha=Math.min(1,prog/0.18)*0.88;
-    mCtx.beginPath(); mCtx.arc(x,y,d.r*(0.5+lp*0.55),0,Math.PI*2);
-    mCtx.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},${dropAlpha})`; mCtx.fill();
-  });
-
-  /* Rose slices grow in from 0.7 onward — pure canvas, no ECharts */
-  if(prog>0.70){
-    const sp=easeOut(Math.min(1,(prog-0.70)/0.3));
-    /* draw slices scaled from centre */
-    const {slices,Rin}=getRoseGeometry();
-    mCtx.globalAlpha=sp;
-    slices.forEach(s=>{
-      mCtx.beginPath(); mCtx.moveTo(s.cx,s.cy);
-      mCtx.arc(s.cx,s.cy,s.sliceR,s.ang,s.ang+s.sweep);
-      mCtx.closePath(); mCtx.fillStyle=Q_COLORS[s.qi]; mCtx.fill();
-    });
-    mCtx.beginPath(); mCtx.arc(slices[0].cx,slices[0].cy,Rin,0,Math.PI*2);
-    mCtx.fillStyle='#fff'; mCtx.fill();
-    slices.forEach(s=>{
-      mCtx.beginPath(); mCtx.moveTo(s.cx,s.cy);
-      mCtx.arc(s.cx,s.cy,s.sliceR,s.ang,s.ang+s.sweep);
-      mCtx.closePath(); mCtx.strokeStyle='#fff'; mCtx.lineWidth=2; mCtx.stroke();
-    });
-    mCtx.globalAlpha=1;
-  }
-
-  /* Labels fade in last */
-  if(prog>0.88){
-    const la=easeOut(Math.min(1,(prog-0.88)/0.12));
-    const Q_LABEL_LINES=[['Q1','Jan · Feb · Mar'],['Q2','Apr · May · Jun'],['Q3','Jul · Aug · Sep'],['Q4','Oct · Nov · Dec']];
-    const tot=Q_COUNTS.reduce((a,b)=>a+b,0);
-    const {slices}=getRoseGeometry();
-    mCtx.globalAlpha=la;
-    slices.forEach(s=>{
-      const mid=s.ang+s.sweep/2;
-      const labelR=s.sliceR+40;
-      let lx=s.cx+Math.cos(mid)*labelR;
-      let ly=s.cy+Math.sin(mid)*labelR;
-      if(s.qi===0){ lx+=28; ly-=22; }
-      const ex=s.cx+Math.cos(mid)*s.sliceR;
-      const ey=s.cy+Math.sin(mid)*s.sliceR;
-      mCtx.beginPath(); mCtx.moveTo(ex,ey); mCtx.lineTo(lx,ly);
-      mCtx.strokeStyle='rgba(0,0,0,0.25)'; mCtx.lineWidth=1.2; mCtx.stroke();
-      mCtx.fillStyle='#2d1b69'; mCtx.font='bold 13px sans-serif'; mCtx.textAlign='center';
-      mCtx.fillText(Q_LABEL_LINES[s.qi][0],lx,ly-10);
-      mCtx.fillStyle='#666'; mCtx.font='11px sans-serif';
-      mCtx.fillText(Q_LABEL_LINES[s.qi][1],lx,ly+5);
-      mCtx.fillText(`${s.count} players · ${Math.round(s.count/tot*100)}%`,lx,ly+19);
-    });
-    mCtx.globalAlpha=1;
-  }
-
-  if(prog<1){
-    liqAnim=requestAnimationFrame(drawLiquid);
-  } else {
-    /* Final clean canvas rose — stays on morph canvas as checkpoint */
-    mCtx.clearRect(0,0,W,H);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    drawCanvasRose(1);
-    showNav(true);
-  }
-}
-
-function drawBarsOnly(ctx) {
-  const mx=Math.max(...COUNTS);
-  ctx.strokeStyle='rgba(0,0,0,.1)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(MAR.left,MAR.top); ctx.lineTo(MAR.left,H-MAR.bottom); ctx.lineTo(W-MAR.right,H-MAR.bottom); ctx.stroke();
-  COUNTS.forEach((count,mi)=>{
-    const {bx,by,bw,bh}=barRect(mi);
-    ctx.fillStyle='#1a4db5'; ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,[3,3,0,0]); ctx.fill();
-    ctx.fillStyle='#1a4db5'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.fillText(count,bx+bw/2,by-6);
-    ctx.fillStyle='#555'; ctx.font='12px sans-serif'; ctx.fillText(MONTHS[mi],bx+bw/2,H-MAR.bottom+18);
-  });
-  drawAxisLabels(ctx);
-}
-
-function gotoCheckpoint(cp) {
-  cancelAnimationFrame(flyAnim); cancelAnimationFrame(morphAnim);
-  cancelAnimationFrame(liqAnim); cancelAnimationFrame(portalAnim);
-  checkpoint=cp;
-  treeWrap.style.opacity='0'; treeWrap.style.pointerEvents='none';
-  mCtx.clearRect(0,0,W,H); flyCtx.clearRect(0,0,W,H); pCtx.clearRect(0,0,W,H);
-
-  if(cp==='fly'){ arrived=false; treeBuilt=false; hideNav(); initFly(); }
-  else if(cp==='tree'){
-    arrived=true; flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    if(!treeBuilt) buildSVGTree();
-    d3.select(treeSvg).selectAll('.tlbl').style('opacity',1);
-    treeWrap.style.opacity='1'; treeWrap.style.pointerEvents='auto';
-    showNav(false);
-  }
-  else if(cp==='bars'){
-    flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    drawFinalBars(); showNav(true);
-  }
-  else if(cp==='rose'){
-    flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    drawCanvasRose(1); showNav(true);
-  }
-  else if(cp==='leagues'){
-    flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    drawLeagueComparison(mCtx, 1); showNav(true);
-  }
-}
-
-/* ══════════════════════════════════════════
-   STEP 5: PURE CANVAS LEAGUE COMPARISON
-══════════════════════════════════════════ */
-function drawLeagueComparison(ctx, alpha) {
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
-
-  const NAV = 52;
-  const availH = H - NAV;
-  const sectionH = (availH - 1) / 2; // -1 for divider
-  const barAreaW = W * 0.58;
-  const pieAreaX = W * 0.62;
-  const pieAreaW = W * 0.38;
-  const leftPad = 110;
-  const rightPad = 16;
-
-  function drawSection(months, qData, barColor, label, dotColor, yOff) {
-    // Header
-    ctx.fillStyle = dotColor;
-    ctx.beginPath(); ctx.arc(24, yOff+20, 6, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#1a1a1a'; ctx.font = '500 14px sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText(label, 38, yOff+24);
-
-    // Horizontal bars
-    const bTop = yOff + 42;
-    const bH = (sectionH - 50) / 12;
-    const maxV = Math.max(...months);
     months.forEach((v, i) => {
-      const bw = (v / maxV) * (barAreaW - leftPad - rightPad);
-      const by = bTop + i * bH + bH * 0.1;
-      const bht = bH * 0.78;
-      // track
-      ctx.fillStyle = 'rgba(0,0,0,0.04)';
-      ctx.beginPath(); ctx.roundRect(leftPad, by, barAreaW-leftPad-rightPad, bht, [0,2,2,0]); ctx.fill();
-      // bar
-      ctx.fillStyle = barColor;
-      ctx.beginPath(); ctx.roundRect(leftPad, by, Math.max(2,bw), bht, [0,2,2,0]); ctx.fill();
-      // month label
-      ctx.fillStyle = '#444'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
-      ctx.fillText(MONTHS_FULL[i], leftPad-4, by+bht/2+3);
-      // value
-      ctx.fillStyle = '#555'; ctx.textAlign = 'left';
-      ctx.fillText(v, leftPad+bw+4, by+bht/2+3);
+      const fullBw = (v / maxV) * chartW;
+      const by  = tPad + i * rowH + rowH * 0.1;
+      const bht = rowH * 0.72;
+
+      /* track */
+      const track = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      track.setAttribute('x', lPad); track.setAttribute('y', by);
+      track.setAttribute('width', chartW); track.setAttribute('height', bht);
+      track.setAttribute('rx', 2); track.setAttribute('fill', 'rgba(0,0,0,0.04)');
+      svg.appendChild(track);
+
+      /* bar — starts at 0, animates in */
+      const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bar.setAttribute('class', 'league-bar');
+      bar.setAttribute('x', lPad); bar.setAttribute('y', by);
+      bar.setAttribute('width', 0); bar.setAttribute('height', bht);
+      bar.setAttribute('rx', 2); bar.setAttribute('fill', color);
+      bar.setAttribute('data-w', fullBw);
+      bar.setAttribute('data-fullw', fullBw);
+      svg.appendChild(bar);
+      if (isFifa) fifaBarEls[i] = bar;
+      else        nflBarEls[i]  = bar;
+
+      /* month label */
+      const mlbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      mlbl.setAttribute('x', lPad-5); mlbl.setAttribute('y', by+bht/2+3.5);
+      mlbl.setAttribute('text-anchor','end'); mlbl.setAttribute('font-family','Syne,sans-serif');
+      mlbl.setAttribute('font-size', isMobile?8:9.5); mlbl.setAttribute('fill','#555');
+      mlbl.textContent = MONTHS_FULL[i]; svg.appendChild(mlbl);
     });
 
-    // Donut pie
-    const pcx = pieAreaX + pieAreaW*0.42;
-    const pcy = yOff + sectionH/2 + 4;
-    const pR  = Math.min(pieAreaW, sectionH) * 0.36;
-    const pIn = pR * 0.42;
-    const tot = qData.reduce((a,b)=>a+b[0],0);
-    let ang = -Math.PI/2;
-    qData.forEach(([count, color]) => {
-      const sweep = 2*Math.PI*(count/tot);
-      ctx.beginPath(); ctx.moveTo(pcx,pcy);
-      ctx.arc(pcx,pcy,pR,ang,ang+sweep);
-      ctx.closePath(); ctx.fillStyle=color; ctx.fill();
-      ang+=sweep;
-    });
-    // hole
-    ctx.beginPath(); ctx.arc(pcx,pcy,pIn,0,Math.PI*2);
-    ctx.fillStyle='#fff'; ctx.fill();
-    // borders
-    ang=-Math.PI/2;
-    qData.forEach(([count]) => {
-      const sweep=2*Math.PI*(count/tot);
-      ctx.beginPath(); ctx.moveTo(pcx,pcy);
-      ctx.arc(pcx,pcy,pR,ang,ang+sweep);
-      ctx.closePath(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
-      ang+=sweep;
-    });
-    // pie labels
-    ang=-Math.PI/2;
-    qData.forEach(([count,color],qi)=>{
-      const sweep=2*Math.PI*(count/tot);
-      const mid=ang+sweep/2;
-      const lx=pcx+Math.cos(mid)*(pR+22);
-      const ly=pcy+Math.sin(mid)*(pR+22);
-      ctx.fillStyle='#333'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
-      ctx.fillText(Q_SHORT[qi],lx,ly-3);
-      ctx.fillStyle='#777'; ctx.font='9px sans-serif';
-      ctx.fillText(`${Math.round(count/tot*100)}%`,lx,ly+8);
-      ang+=sweep;
+    div.appendChild(svg); wrap.appendChild(div);
+
+    /* Animate bars in */
+    const barEls = svg.querySelectorAll('.league-bar');
+    gsap.to(barEls, {
+      attr: (i, el) => ({ width: el.getAttribute('data-w') }),
+      duration: 0.65, stagger: 0.04, ease: 'power3.out', delay: 0.15
     });
   }
 
-  drawSection(FIFA_M, FIFA_Q, '#5cb85c', 'FIFA — Top 5 European Leagues', '#5cb85c', 0);
-
-  // divider
-  ctx.strokeStyle='rgba(0,0,0,0.06)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(24,sectionH); ctx.lineTo(W-24,sectionH); ctx.stroke();
-
-  drawSection(NFL_M, NFL_Q, '#f47c3c', 'NFL — National Football League', '#f47c3c', sectionH+1);
-
-  ctx.globalAlpha=1;
+  makeSection(FIFA_M, '#5cb85c', 'FIFA — Top 5 European Leagues', '#5cb85c', 0,     true);
+  makeSection(NFL_M,  '#f47c3c', 'NFL — National Football League', '#f47c3c', sH+1, false);
+  /* Text overlay — hidden until triggered */
+  const txt = document.createElement('div');
+  txt.id = 'league-text';
+  txt.style.cssText = `
+    position:absolute; inset:0; z-index:10;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none; opacity:0;
+    background:rgba(255,255,255,0.92);
+  `;
+  txt.innerHTML = `
+    <div style="text-align:center;padding:2rem;">
+      <div style="font-family:'Instrument Serif',serif;font-size:clamp(1.6rem,5vw,2.6rem);font-weight:400;color:#111;line-height:1.25;-webkit-font-smoothing:antialiased;">
+        Older kids in Grades or<br/>Leagues tend to go farther.
+      </div>
+      <div style="font-family:Syne,sans-serif;font-size:clamp(0.6rem,2vw,0.72rem);font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#aaa;margin-top:1rem;">
+        Relative Age Effect
+      </div>
+    </div>`;
+  wrap.appendChild(txt);
 }
 
-/* ══════════════════════════════════════════
-   PORTAL: FLY THROUGH ROSE → LEAGUES
-   Rose zooms toward viewer (scale up),
-   white expands from inner hole,
-   league comparison zooms in from distance
-══════════════════════════════════════════ */
-function startPortal() {
-  portalT=0; checkpoint='leagues'; hideNav();
-  portalAnim=requestAnimationFrame(drawPortal);
-}
+/* Called on tap at step 4 */
+let leaguePhase = 0;
 
-function drawPortal() {
-  portalT++;
-  const DUR=200, prog=Math.min(1,portalT/DUR);
-  const cx=W/2, cy=(H-52)/2;
+function advanceLeague() {
+  if (leaguePhase === 0) {
+    /* ONE CLICK — FIFA drops first, then NFL drops right after */
+    const tl = gsap.timeline({ onComplete: () => { leaguePhase = 1; } });
 
-  pCtx.clearRect(0,0,W,H);
+    /* FIFA: Jun Jul Aug Sep Oct Nov Dec */
+    tl.to(FIFA_DROP_A.map(i => fifaBarEls[i]), {
+      attr: { width: 0 },
+      duration: 0.45, stagger: 0.055, ease: 'power2.in'
+    }, 0);
 
-  // Phase 1 (0→0.5): rose zooms toward us + hole expands white
-  if(prog<=0.55){
-    const p1=easeInOut(prog/0.55);
-    // Rose on morph canvas scales up via CSS transform trick on pCtx
-    // We redraw the rose scaled from centre
-    const scale=1+p1*3;
-    pCtx.save();
-    pCtx.translate(cx,cy);
-    pCtx.scale(scale,scale);
-    pCtx.translate(-cx,-cy);
-    pCtx.fillStyle='#fff'; pCtx.fillRect(0,0,W,H);
-    drawCanvasRose_ctx(pCtx,1);
-    pCtx.restore();
+    /* NFL: Feb May Jun Jul Aug Sep Nov Dec — starts slightly after FIFA */
+    tl.to(NFL_DROP_A.map(i => nflBarEls[i]), {
+      attr: { width: 0 },
+      duration: 0.45, stagger: 0.055, ease: 'power2.in'
+    }, 0.35);
 
-    // White disc expands from inner hole — feels like flying through
-    const {Rin}=getRoseGeometry();
-    const holeR=Rin*scale + p1*Math.sqrt(W*W+H*H)*0.6;
-    pCtx.beginPath(); pCtx.arc(cx,cy,Math.max(0,holeR),0,Math.PI*2);
-    pCtx.fillStyle='#fff'; pCtx.fill();
+    /* FIFA: May drops last of all */
+    tl.to(FIFA_DROP_B.map(i => fifaBarEls[i]), {
+      attr: { width: 0 },
+      duration: 0.4, ease: 'power2.in'
+    }, 0.85);
 
-    // Also fade the morph canvas rose out
-    mCtx.globalAlpha=Math.max(0,1-p1*1.5);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    if(mCtx.globalAlpha>0.05) drawCanvasRose(mCtx.globalAlpha>0?1:0);
-    mCtx.globalAlpha=1;
-  }
-
-  // Phase 2 (0.45→1): league comparison zooms in from tiny
-  if(prog>0.42){
-    const p2=easeOut((prog-0.42)/0.58);
-    const minS=0.05, curS=minS+(1-minS)*p2;
-    pCtx.fillStyle='#fff'; pCtx.fillRect(0,0,W,H);
-    pCtx.save();
-    pCtx.translate(cx,cy);
-    pCtx.scale(curS,curS);
-    pCtx.translate(-cx,-cy);
-    pCtx.fillStyle='#fff'; pCtx.fillRect(0,0,W,H);
-    drawLeagueComparison(pCtx,1);
-    pCtx.restore();
-  }
-
-  if(prog<1){
-    portalAnim=requestAnimationFrame(drawPortal);
+  } else if (leaguePhase === 1) {
+    /* Show text */
+    gsap.to('#league-text', { opacity: 1, duration: 0.6, ease: 'power2.out' });
+    leaguePhase = 2;
   } else {
-    pCtx.clearRect(0,0,W,H);
-    mCtx.clearRect(0,0,W,H);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    drawLeagueComparison(mCtx,1);
-    showNav(true);
+    leaguePhase = 0;
+    advanceStep(); // goes to currentStep 4 → showStep5()
   }
 }
 
-// drawCanvasRose but on an arbitrary context (for portal scaling)
-function drawCanvasRose_ctx(ctx, alpha) {
-  const {slices,Rin}=getRoseGeometry();
-  const Q_LABEL_LINES=[['Q1','Jan · Feb · Mar'],['Q2','Apr · May · Jun'],['Q3','Jul · Aug · Sep'],['Q4','Oct · Nov · Dec']];
-  const tot=Q_COUNTS.reduce((a,b)=>a+b,0);
-  ctx.globalAlpha=alpha;
-  slices.forEach(s=>{
-    ctx.beginPath(); ctx.moveTo(s.cx,s.cy);
-    ctx.arc(s.cx,s.cy,s.sliceR,s.ang,s.ang+s.sweep);
-    ctx.closePath(); ctx.fillStyle=Q_COLORS[s.qi]; ctx.fill();
+function showStep4() { startBarDetach(); }
+
+/* ══════════════════════════════════════
+   STEP 5 — WHEN TO HAVE A BABY (ODDS)
+══════════════════════════════════════ */
+const NFL_ODD  = [16,-8,12,2,-6,-12,-7,-2,2,20,-14,-4];
+const FIFA_ODD = [44,24,25,14,11,-5,-7,-18,-20,-17,-20,-31];
+
+let oddsPhase = 0;
+
+function showStep5() {
+  oddsPhase = 0;
+  gsap.to('#step4-wrap', { opacity: 0, duration: 0.5, ease: 'power2.in', onComplete: () => {
+    const wrap = document.getElementById('step5-wrap');
+    wrap.innerHTML = '';
+    wrap.style.background = '#fff';
+    wrap.style.pointerEvents = 'auto';
+    buildOddsScreen(wrap);
+    gsap.fromTo(wrap, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out' });
+  }});
+}
+
+function buildOddsScreen(wrap) {
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const isMobile = W < 600;
+  const NFL_ODD  = [16,-8,12,2,-6,-12,-7,-2,2,20,-14,-4];
+  const FIFA_ODD = [44,24,25,14,11,-5,-7,-18,-20,-17,-20,-31];
+  const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  /* Title */
+  const titleDiv = document.createElement('div');
+  titleDiv.id = 'odds-title';
+  titleDiv.style.cssText = `
+    position:absolute; top:0; left:0; right:0;
+    text-align:center; padding:${isMobile?'1.1rem 1rem 0':'1.6rem 2rem 0'};
+    opacity:0; z-index:5; pointer-events:none;
+  `;
+  titleDiv.innerHTML = `
+    <div style="font-family:'Instrument Serif',serif;font-size:clamp(1.6rem,5vw,2.8rem);
+      font-weight:400;font-style:italic;color:#111;line-height:1.05;">
+      When to have a baby
+    </div>
+    <div style="font-family:Syne,sans-serif;font-size:clamp(0.55rem,1.8vw,0.72rem);
+      font-weight:700;letter-spacing:0.24em;text-transform:uppercase;
+      color:#bbb;margin-top:0.5rem;">
+      Better Your Odds
+    </div>`;
+  wrap.appendChild(titleDiv);
+
+  const titleH = isMobile ? 86 : 106;
+  const navH   = 60;
+  const availH = H - titleH - navH;
+  const panelW = W / 2;
+
+  /* Vertical divider */
+  const vdiv = document.createElement('div');
+  vdiv.style.cssText = `position:absolute;top:${titleH}px;left:${W/2}px;width:1px;height:${availH}px;background:rgba(0,0,0,0.07);`;
+  wrap.appendChild(vdiv);
+
+  const MID_W  = isMobile ? 52 : 64; // width of centre month strip
+  const leftW  = (W - MID_W) / 2;    // each panel width
+
+  /* Remove vertical divider — replaced by centre strip */
+
+  function makePanel(ox, data, title, xMin, xMax, isNfl) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width', leftW);
+    svg.setAttribute('height', availH);
+    svg.style.cssText = `position:absolute;top:${titleH}px;left:${ox}px;opacity:0;`;
+    svg.id = isNfl ? 'odds-svg-nfl' : 'odds-svg-fifa';
+
+    const lPad = isMobile ? 10 : 14;
+    const rPad = isMobile ? 10 : 14;
+    const tPad = isMobile ? 28 : 36;
+    const bPad = isMobile ? 14 : 20;
+    const cW   = leftW - lPad - rPad;
+    const cH   = availH - tPad - bPad;
+    const rowH = cH / 12;
+    const barH = rowH * 0.62;
+    const range = xMax - xMin;
+    /* NFL: zero line on RIGHT edge (bars grow left for neg, right for pos)
+       FIFA: zero line on LEFT edge */
+    const zeroX = isNfl
+      ? lPad + (Math.abs(xMin) / range) * cW   // NFL zero near right
+      : lPad + (Math.abs(xMin) / range) * cW;  // FIFA zero near left
+
+    /* Panel title */
+    const ttl = document.createElementNS('http://www.w3.org/2000/svg','text');
+    ttl.setAttribute('x', leftW/2); ttl.setAttribute('y', isMobile?18:24);
+    ttl.setAttribute('text-anchor','middle');
+    ttl.setAttribute('font-family','Syne,sans-serif');
+    ttl.setAttribute('font-size', isMobile?11:13);
+    ttl.setAttribute('font-weight','700');
+    ttl.setAttribute('fill','#111');
+    ttl.textContent = title; svg.appendChild(ttl);
+
+    /* Zero line */
+    const zline = document.createElementNS('http://www.w3.org/2000/svg','line');
+    zline.setAttribute('x1',zeroX); zline.setAttribute('x2',zeroX);
+    zline.setAttribute('y1',tPad);  zline.setAttribute('y2',tPad+cH);
+    zline.setAttribute('stroke','rgba(0,0,0,0.18)'); zline.setAttribute('stroke-width','1');
+    svg.appendChild(zline);
+
+    data.forEach((v, i) => {
+      const y   = tPad + i * rowH + (rowH - barH) / 2;
+      const bpx = (Math.abs(v) / range) * cW;
+      const pos = v >= 0;
+      const col = pos ? '#22a350' : '#e03e3e';
+
+      const bar = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bar.setAttribute('class','odds-bar');
+      bar.setAttribute('x', zeroX);
+      bar.setAttribute('y', y);
+      bar.setAttribute('width', 0);
+      bar.setAttribute('height', barH);
+      bar.setAttribute('rx', 2);
+      bar.setAttribute('fill', col);
+      bar.setAttribute('data-bpx', bpx);
+      bar.setAttribute('data-pos', pos ? '1' : '0');
+      svg.appendChild(bar);
+
+      /* Value label — outside bar tip */
+      const vlbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+      vlbl.setAttribute('class','odds-val');
+      vlbl.setAttribute('x', pos ? zeroX + bpx + 3 : zeroX - bpx - 3);
+      vlbl.setAttribute('y', y + barH/2 + 3.5);
+      vlbl.setAttribute('text-anchor', pos ? 'start' : 'end');
+      vlbl.setAttribute('font-family','Syne,sans-serif');
+      vlbl.setAttribute('font-size', isMobile?6.5:8);
+      vlbl.setAttribute('fill','#666');
+      vlbl.setAttribute('opacity','0');
+      vlbl.textContent = (pos ? '+' : '') + v + '%';
+      svg.appendChild(vlbl);
+    });
+
+    wrap.appendChild(svg);
+    return svg;
+  }
+
+  /* Centre month label strip */
+  function makeCentreLabels() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width', MID_W);
+    svg.setAttribute('height', availH);
+    svg.style.cssText = `position:absolute;top:${titleH}px;left:${leftW}px;opacity:0;`;
+    svg.id = 'odds-svg-months';
+
+    const tPad = isMobile ? 28 : 36;
+    const bPad = isMobile ? 14 : 20;
+    const cH   = availH - tPad - bPad;
+    const rowH = cH / 12;
+    const barH = rowH * 0.62;
+
+    MONTHS_S.forEach((m, i) => {
+      const y = tPad + i * rowH + (rowH - barH) / 2;
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+      lbl.setAttribute('x', MID_W / 2);
+      lbl.setAttribute('y', y + barH/2 + 3.5);
+      lbl.setAttribute('text-anchor','middle');
+      lbl.setAttribute('font-family','Syne,sans-serif');
+      lbl.setAttribute('font-size', isMobile?7:8.5);
+      lbl.setAttribute('font-weight','700');
+      lbl.setAttribute('fill','#888');
+      lbl.textContent = m;
+      svg.appendChild(lbl);
+    });
+
+    wrap.appendChild(svg);
+  }
+
+  makePanel(0,             NFL_ODD,  'NFL',  -20, 20,  true);
+  makeCentreLabels();
+  makePanel(leftW + MID_W, FIFA_ODD, 'FIFA', -44, 44, false);
+
+  /* Animate */
+  gsap.set('#odds-title', { y: 14 });
+  const tl = gsap.timeline();
+  tl.to('#odds-title', { opacity:1, y:0, duration:0.7, ease:'power3.out' }, 0.1);
+  tl.to(['#odds-svg-nfl','#odds-svg-months','#odds-svg-fifa'], { opacity:1, duration:0.4 }, 0.5);
+
+  const allBars = wrap.querySelectorAll('.odds-bar');
+  allBars.forEach(bar => {
+    const bpx = parseFloat(bar.getAttribute('data-bpx'));
+    const pos  = bar.getAttribute('data-pos') === '1';
+    tl.to(bar, {
+      attr: pos ? { width: bpx } : { x: `-=${bpx}`, width: bpx },
+      duration: 0.5, ease: 'power3.out'
+    }, 0.7);
   });
-  ctx.beginPath(); ctx.arc(slices[0].cx,slices[0].cy,Rin,0,Math.PI*2);
-  ctx.fillStyle='#fff'; ctx.fill();
-  slices.forEach(s=>{
-    ctx.beginPath(); ctx.moveTo(s.cx,s.cy);
-    ctx.arc(s.cx,s.cy,s.sliceR,s.ang,s.ang+s.sweep);
-    ctx.closePath(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
-  });
-  slices.forEach(s=>{
-    const mid=s.ang+s.sweep/2;
-    const labelR=s.sliceR+40;
-    let lx=s.cx+Math.cos(mid)*labelR;
-    let ly=s.cy+Math.sin(mid)*labelR;
-    if(s.qi===0){lx+=28;ly-=22;}
-    const ex=s.cx+Math.cos(mid)*s.sliceR, ey=s.cy+Math.sin(mid)*s.sliceR;
-    ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(lx,ly);
-    ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=1.2; ctx.stroke();
-    ctx.fillStyle='#2d1b69'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
-    ctx.fillText(Q_LABEL_LINES[s.qi][0],lx,ly-10);
-    ctx.fillStyle='#666'; ctx.font='11px sans-serif';
-    ctx.fillText(Q_LABEL_LINES[s.qi][1],lx,ly+5);
-    ctx.fillText(`${s.count} players · ${Math.round(s.count/tot*100)}%`,lx,ly+19);
-  });
-  ctx.globalAlpha=1;
+
+  tl.to(wrap.querySelectorAll('.odds-val'), {
+    opacity: 1, duration: 0.3, stagger: 0.025
+  }, 1.2);
 }
 
-/* ══════════════════════════════════════════
-   STEP 6 — diverging bars
-══════════════════════════════════════════ */
-function drawStep6(ctx) {
-  const halfW = W / 2;
-  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(halfW,10); ctx.lineTo(halfW,H-10); ctx.stroke();
-  drawStep6Panel(ctx, 0,     halfW, NFL_ODD,  'NFL — National Football League', '#f47c3c', -20, 20);
-  drawStep6Panel(ctx, halfW, halfW, FIFA_ODD, 'FIFA — Top 5 European Leagues',  '#5cb85c', -40, 40);
-}
-
-function drawStep6Panel(ctx, ox, panelW, data, title, dotColor, xMin, xMax) {
-  const NAV=52, top=48, bottom=12, left=102, right=44;
-  const cW=panelW-left-right, cH=H-NAV-top-bottom;
-  const rowH=cH/12, barH=rowH*0.55;
-  const range=xMax-xMin;
-  const zeroX=ox+left+(-xMin/range)*cW;
-
-  ctx.fillStyle=dotColor; ctx.beginPath(); ctx.arc(ox+18,22,5,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#1a1a1a'; ctx.font='500 13px sans-serif'; ctx.textAlign='left';
-  ctx.fillText(title, ox+30, 27);
-
-  ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(zeroX,top); ctx.lineTo(zeroX,top+cH); ctx.stroke();
-
-  data.forEach((v,i)=>{
-    const y=top+i*rowH+(rowH-barH)/2;
-    const bpx=(Math.abs(v)/range)*cW;
-    const pos=v>=0, bx=pos?zeroX:zeroX-bpx;
-    ctx.fillStyle=pos?'#22a350':'#e03e3e';
-    ctx.beginPath();
-    pos?ctx.roundRect(bx,y,bpx,barH,[0,2,2,0]):ctx.roundRect(bx,y,bpx,barH,[2,0,0,2]);
-    ctx.fill();
-    ctx.fillStyle='#444'; ctx.font='9.5px sans-serif'; ctx.textAlign='right';
-    ctx.fillText(MONTHS_FULL[i], ox+left-6, y+barH/2+3.5);
-    ctx.fillStyle='#555'; ctx.font='9px sans-serif';
-    const lbl=(pos?'+':'')+v+'%';
-    if(pos){ctx.textAlign='left'; ctx.fillText(lbl,bx+bpx+4,y+barH/2+3.5);}
-    else   {ctx.textAlign='right'; ctx.fillText(lbl,bx-4,   y+barH/2+3.5);}
-  });
-}
-
-/* ── slide transition: step 5 out left, step 6 in from right ── */
-function startFinalTransition() {
-  finalT=0; checkpoint='step6'; hideNav();
-  finalAnim=requestAnimationFrame(drawFinalTransition);
-}
-
-function drawFinalTransition() {
-  finalT++;
-  const DUR=90, prog=Math.min(1,finalT/DUR);
-  const ease=easeInOut(prog);
-
-  pCtx.clearRect(0,0,W,H);
-  pCtx.fillStyle='#fff'; pCtx.fillRect(0,0,W,H);
-
-  /* step 5 slides left */
-  pCtx.save();
-  pCtx.translate(-ease*W, 0);
-  drawLeagueComparison(pCtx, 1);
-  pCtx.restore();
-
-  /* step 6 slides in from right */
-  pCtx.save();
-  pCtx.translate((1-ease)*W, 0);
-  drawStep6(pCtx);
-  pCtx.restore();
-
-  if(prog<1){
-    finalAnim=requestAnimationFrame(drawFinalTransition);
-  } else {
-    pCtx.clearRect(0,0,W,H);
-    mCtx.clearRect(0,0,W,H);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    drawStep6(mCtx);
-    showNav(true);
+function showStep6() {}
+/* ══════════════════════════════════════
+   EVENTS
+══════════════════════════════════════ */
+document.getElementById('stage').addEventListener('click', () => {
+  if (currentStep === 0 && !arrived) {
+    cancelAnimationFrame(flyAnim);
+    arrived = true;
+    gsap.to('#text-step1', { opacity: 0, duration: 0.3 });
+    gsap.to('#space-canvas', { opacity: 0, duration: 0.4 });
+    setTimeout(() => advanceStep(), 500);
+  } else if (currentStep === 1) {
+    gsap.to('#text-step2', { opacity: 0, duration: 0.3, onComplete: () => advanceStep() });
+  } else if (currentStep === 2) {
+    advanceStep();
+  } else if (currentStep === 3) {
+    advanceLeague();
+  } else if (currentStep === 4) {
+    /* step5 is already showing — end of story */
   }
-}
-
-function gotoCheckpoint(cp) {
-  cancelAnimationFrame(flyAnim); cancelAnimationFrame(morphAnim);
-  cancelAnimationFrame(liqAnim); cancelAnimationFrame(portalAnim); cancelAnimationFrame(finalAnim);
-  checkpoint=cp;
-  treeWrap.style.opacity='0'; treeWrap.style.pointerEvents='none';
-  mCtx.clearRect(0,0,W,H); flyCtx.clearRect(0,0,W,H); pCtx.clearRect(0,0,W,H);
-
-  if(cp==='fly'){ arrived=false; treeBuilt=false; hideNav(); initFly(); }
-  else if(cp==='tree'){
-    arrived=true; flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    if(!treeBuilt) buildSVGTree();
-    d3.select(treeSvg).selectAll('.tlbl').style('opacity',1);
-    treeWrap.style.opacity='1'; treeWrap.style.pointerEvents='auto';
-    showNav(false);
-  }
-  else if(cp==='bars'){
-    flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    drawFinalBars(); showNav(true);
-  }
-  else if(cp==='rose'){
-    flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    drawCanvasRose(1); showNav(true);
-  }
-  else if(cp==='leagues'){
-    flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    drawLeagueComparison(mCtx,1); showNav(true);
-  }
-  else if(cp==='step6'){
-    flyCtx.fillStyle='#fff'; flyCtx.fillRect(0,0,W,H);
-    mCtx.fillStyle='#fff'; mCtx.fillRect(0,0,W,H);
-    drawStep6(mCtx); showNav(true);
-  }
-}
-
-/* ── events ── */
-btnBack.addEventListener('click',()=>{
-  if(checkpoint==='tree')         gotoCheckpoint('fly');
-  else if(checkpoint==='bars')    gotoCheckpoint('tree');
-  else if(checkpoint==='rose')    gotoCheckpoint('bars');
-  else if(checkpoint==='leagues') gotoCheckpoint('rose');
-  else if(checkpoint==='step6')   gotoCheckpoint('leagues');
 });
-btnRestart.addEventListener('click',()=>gotoCheckpoint('fly'));
-btnContinue.addEventListener('click',()=>{
-  if(checkpoint==='tree'&&arrived) startMorph();
-  else if(checkpoint==='bars')    startLiquidTransition();
-  else if(checkpoint==='rose')    startPortal();
-  else if(checkpoint==='leagues') startFinalTransition();
-  else if(checkpoint==='step6')   alert('The end!');
+
+document.getElementById('btn-back').addEventListener('click', e => {
+  e.stopPropagation();
+  goBack();
 });
 
-window.addEventListener('load',()=>{ resize(); initFly(); });
-window.addEventListener('resize',()=>{ resize(); gotoCheckpoint('fly'); });
+window.addEventListener('resize', resize);
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+window.addEventListener('load', () => {
+  gsap.set('#text-step1', { y: 20 });
+  startStep1();
+});
 </script>
 </body>
 </html>
